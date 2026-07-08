@@ -1,0 +1,157 @@
+version: "3.9"
+
+services:
+  # ========================
+  # Backend API
+  # ========================
+  backend:
+    build:
+      context: ./backend
+      dockerfile: Dockerfile
+    container_name: sentinelai-backend
+    ports:
+      - "8000:8000"
+    environment:
+      - DATABASE_URL=postgresql+asyncpg://sentinelai:sentinelai@postgres:5432/sentinelai
+      - REDIS_URL=redis://redis:6379/0
+      - SECRET_KEY=${SECRET_KEY:-dev-secret-key}
+      - JWT_SECRET_KEY=${JWT_SECRET_KEY:-dev-jwt-secret}
+      - OPENAI_API_KEY=${OPENAI_API_KEY:-}
+      - ANTHROPIC_API_KEY=${ANTHROPIC_API_KEY:-}
+      - GOOGLE_API_KEY=${GOOGLE_API_KEY:-}
+      - OLLAMA_HOST=http://ollama:11434
+    depends_on:
+      postgres:
+        condition: service_healthy
+      redis:
+        condition: service_healthy
+    volumes:
+      - ./backend:/app
+    networks:
+      - sentinelai-network
+    restart: unless-stopped
+
+  # ========================
+  # Frontend
+  # ========================
+  frontend:
+    build:
+      context: ./frontend
+      dockerfile: Dockerfile
+    container_name: sentinelai-frontend
+    ports:
+      - "3000:3000"
+    environment:
+      - NEXT_PUBLIC_API_URL=http://localhost:8000/api/v1
+      - NEXT_PUBLIC_APP_NAME=SentinelAI
+    depends_on:
+      - backend
+    volumes:
+      - ./frontend/src:/app/src
+    networks:
+      - sentinelai-network
+    restart: unless-stopped
+
+  # ========================
+  # PostgreSQL + pgvector
+  # ========================
+  postgres:
+    image: pgvector/pgvector:pg16
+    container_name: sentinelai-postgres
+    ports:
+      - "5432:5432"
+    environment:
+      - POSTGRES_DB=sentinelai
+      - POSTGRES_USER=sentinelai
+      - POSTGRES_PASSWORD=sentinelai
+    volumes:
+      - postgres_data:/var/lib/postgresql/data
+      - ./scripts/init-db.sql:/docker-entrypoint-initdb.d/init.sql
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U sentinelai"]
+      interval: 5s
+      timeout: 5s
+      retries: 5
+    networks:
+      - sentinelai-network
+    restart: unless-stopped
+
+  # ========================
+  # Redis (Caching & Rate Limiting)
+  # ========================
+  redis:
+    image: redis:7-alpine
+    container_name: sentinelai-redis
+    ports:
+      - "6379:6379"
+    volumes:
+      - redis_data:/data
+    healthcheck:
+      test: ["CMD", "redis-cli", "ping"]
+      interval: 5s
+      timeout: 5s
+      retries: 5
+    networks:
+      - sentinelai-network
+    restart: unless-stopped
+
+  # ========================
+  # Ollama (Local LLM)
+  # ========================
+  ollama:
+    image: ollama/ollama:latest
+    container_name: sentinelai-ollama
+    ports:
+      - "11434:11434"
+    volumes:
+      - ollama_data:/root/.ollama
+    networks:
+      - sentinelai-network
+    restart: unless-stopped
+
+  # ========================
+  # Prometheus
+  # ========================
+  prometheus:
+    image: prom/prometheus:latest
+    container_name: sentinelai-prometheus
+    ports:
+      - "9090:9090"
+    volumes:
+      - ./infrastructure/monitoring/prometheus/prometheus.yml:/etc/prometheus/prometheus.yml
+      - prometheus_data:/prometheus
+    networks:
+      - sentinelai-network
+    restart: unless-stopped
+
+  # ========================
+  # Grafana
+  # ========================
+  grafana:
+    image: grafana/grafana:latest
+    container_name: sentinelai-grafana
+    ports:
+      - "3001:3000"
+    environment:
+      - GF_SECURITY_ADMIN_PASSWORD=${GRAFANA_ADMIN_PASSWORD:-admin}
+      - GF_USERS_ALLOW_SIGN_UP=false
+    volumes:
+      - grafana_data:/var/lib/grafana
+      - ./infrastructure/monitoring/grafana/provisioning:/etc/grafana/provisioning
+      - ./infrastructure/monitoring/grafana/dashboards:/var/lib/grafana/dashboards
+    depends_on:
+      - prometheus
+    networks:
+      - sentinelai-network
+    restart: unless-stopped
+
+volumes:
+  postgres_data:
+  redis_data:
+  ollama_data:
+  prometheus_data:
+  grafana_data:
+
+networks:
+  sentinelai-network:
+    driver: bridge
