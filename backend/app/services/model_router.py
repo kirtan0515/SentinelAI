@@ -1,152 +1,91 @@
 """
-Model Router - Routes requests to the appropriate LLM provider.
-Supports OpenAI, Anthropic, Google Gemini, and Ollama.
+Model Router - Facade for the AI Gateway.
+
+This module provides backward compatibility while delegating
+to the production gateway router under app/gateway/.
 """
 
 from typing import Optional
 from uuid import UUID
 
-from app.core.config import settings
+from app.gateway.models import ChatMessage, GatewayRequest, MessageRole
+from app.gateway.router import GatewayRouter
 
 
 class ModelRouter:
     """
-    Routes AI requests to the correct provider based on model selection.
-    Provides a unified interface regardless of the underlying LLM.
+    Facade that wraps the GatewayRouter for backward compatibility.
+
+    The full gateway supports:
+    - Multi-provider routing (OpenAI, Anthropic, Google, Ollama)
+    - Retry with exponential backoff
+    - Circuit breaker per provider
+    - Automatic fallback to alternate models
+    - Cost estimation
     """
 
-    PROVIDER_MAP = {
-        "gpt-4": "openai",
-        "gpt-3.5-turbo": "openai",
-        "gpt-4-turbo": "openai",
-        "claude-3-sonnet": "anthropic",
-        "claude-3-haiku": "anthropic",
-        "claude-3-opus": "anthropic",
-        "gemini-pro": "google",
-        "gemini-pro-vision": "google",
-        "llama2": "ollama",
-        "mistral": "ollama",
-        "codellama": "ollama",
-    }
+    def __init__(self):
+        self._gateway = GatewayRouter()
 
     async def route(
         self,
         model: str,
         message: str,
         session_id: Optional[UUID] = None,
+        system_prompt: Optional[str] = None,
+        conversation_history: Optional[list] = None,
     ) -> dict:
-        """Route a message to the appropriate LLM provider."""
-        provider = self.PROVIDER_MAP.get(model, "openai")
+        """
+        Route a message to the appropriate LLM provider.
 
-        if provider == "openai":
-            return await self._call_openai(model, message)
-        elif provider == "anthropic":
-            return await self._call_anthropic(model, message)
-        elif provider == "google":
-            return await self._call_google(model, message)
-        elif provider == "ollama":
-            return await self._call_ollama(model, message)
-        else:
-            raise ValueError(f"Unknown provider for model: {model}")
+        Args:
+            model: Model identifier (e.g., "gpt-4", "claude-3-sonnet")
+            message: User message to send
+            session_id: Optional session for conversation tracking
+            system_prompt: Optional system prompt
+            conversation_history: Optional previous messages
 
-    async def _call_openai(self, model: str, message: str) -> dict:
-        """Call OpenAI API."""
-        try:
-            from openai import AsyncOpenAI
+        Returns:
+            Dict with content, tokens_used, model, provider, error status
+        """
+        # Build message list
+        messages = []
 
-            client = AsyncOpenAI(api_key=settings.OPENAI_API_KEY)
-            response = await client.chat.completions.create(
-                model=model,
-                messages=[{"role": "user", "content": message}],
-                max_tokens=4096,
+        if system_prompt:
+            messages.append(
+                ChatMessage(role=MessageRole.SYSTEM, content=system_prompt)
             )
-            return {
-                "content": response.choices[0].message.content,
-                "tokens_used": response.usage.total_tokens if response.usage else 0,
-                "model": model,
-                "provider": "openai",
-            }
-        except Exception as e:
-            return {
-                "content": f"Error calling OpenAI: {str(e)}",
-                "tokens_used": 0,
-                "model": model,
-                "provider": "openai",
-                "error": True,
-            }
 
-    async def _call_anthropic(self, model: str, message: str) -> dict:
-        """Call Anthropic API."""
-        try:
-            from anthropic import AsyncAnthropic
-
-            client = AsyncAnthropic(api_key=settings.ANTHROPIC_API_KEY)
-            response = await client.messages.create(
-                model=model,
-                max_tokens=4096,
-                messages=[{"role": "user", "content": message}],
-            )
-            return {
-                "content": response.content[0].text,
-                "tokens_used": response.usage.input_tokens + response.usage.output_tokens,
-                "model": model,
-                "provider": "anthropic",
-            }
-        except Exception as e:
-            return {
-                "content": f"Error calling Anthropic: {str(e)}",
-                "tokens_used": 0,
-                "model": model,
-                "provider": "anthropic",
-                "error": True,
-            }
-
-    async def _call_google(self, model: str, message: str) -> dict:
-        """Call Google Gemini API."""
-        try:
-            import google.generativeai as genai
-
-            genai.configure(api_key=settings.GOOGLE_API_KEY)
-            gen_model = genai.GenerativeModel(model)
-            response = await gen_model.generate_content_async(message)
-            return {
-                "content": response.text,
-                "tokens_used": 0,  # Gemini doesn't always return token counts
-                "model": model,
-                "provider": "google",
-            }
-        except Exception as e:
-            return {
-                "content": f"Error calling Google Gemini: {str(e)}",
-                "tokens_used": 0,
-                "model": model,
-                "provider": "google",
-                "error": True,
-            }
-
-    async def _call_ollama(self, model: str, message: str) -> dict:
-        """Call Ollama (local LLM) API."""
-        try:
-            import httpx
-
-            async with httpx.AsyncClient() as client:
-                response = await client.post(
-                    f"{settings.OLLAMA_HOST}/api/generate",
-                    json={"model": model, "prompt": message, "stream": False},
-                    timeout=120.0,
+        if conversation_history:
+            for msg in conversation_history:
+                role = MessageRole(msg.get("role", "user"))
+                messages.append(
+                    ChatMessage(role=role, content=msg.get("content", ""))
                 )
-                data = response.json()
-                return {
-                    "content": data.get("response", ""),
-                    "tokens_used": data.get("eval_count", 0),
-                    "model": model,
-                    "provider": "ollama",
-                }
-        except Exception as e:
-            return {
-                "content": f"Error calling Ollama: {str(e)}",
-                "tokens_used": 0,
-                "model": model,
-                "provider": "ollama",
-                "error": True,
-            }
+
+        messages.append(ChatMessage(role=MessageRole.USER, content=message))
+
+        # Route through gateway
+        request = GatewayRequest(model=model, messages=messages)
+        response = await self._gateway.route(request)
+
+        # Convert to legacy dict format
+        return {
+            "content": response.content if not response.error else response.error_message,
+            "tokens_used": response.tokens_total,
+            "model": response.model,
+            "provider": response.provider,
+            "error": response.error,
+            "latency_ms": response.latency_ms,
+            "cost_estimate": response.cost_estimate,
+            "tokens_input": response.tokens_input,
+            "tokens_output": response.tokens_output,
+        }
+
+    def get_available_models(self) -> list:
+        """Get list of supported models."""
+        return self._gateway.get_available_models()
+
+    def get_provider_health(self) -> dict:
+        """Get health status of all providers."""
+        return self._gateway.get_provider_health()
