@@ -31,15 +31,19 @@ class ChatService:
         user: User,
         request: ChatRequest,
         start_time: float,
+        prompt_override: Optional[str] = None,
     ) -> ChatResponse:
         """Process a chat message through the full pipeline."""
         # Determine model
         model = request.model or "gpt-4"
 
+        # Use masked prompt if provided, otherwise original
+        message_for_llm = prompt_override or request.message
+
         # Route to appropriate LLM
         llm_response = await self.model_router.route(
             model=model,
-            message=request.message,
+            message=message_for_llm,
             session_id=request.session_id,
         )
 
