@@ -1,0 +1,89 @@
+# Alertmanager configuration for SentinelAI
+# Handles routing, grouping, and notification of Prometheus alerts
+
+global:
+  resolve_timeout: 5m
+  # SMTP settings for email notifications (configure for your environment)
+  # smtp_smarthost: 'smtp.example.com:587'
+  # smtp_from: 'alerts@sentinelai.example.com'
+  # smtp_auth_username: 'alerts@sentinelai.example.com'
+  # smtp_auth_password: '<SMTP_PASSWORD>'
+
+route:
+  # Default receiver
+  receiver: "default-webhook"
+
+  # Group alerts by these labels
+  group_by: ["alertname", "severity", "service"]
+
+  # Wait before sending grouped notifications
+  group_wait: 30s
+
+  # How long to wait before sending notifications about new alerts in a group
+  group_interval: 5m
+
+  # Default repeat interval
+  repeat_interval: 4h
+
+  # Child routes for severity-based routing
+  routes:
+    # Critical alerts: shorter repeat interval, page on-call
+    - match:
+        severity: critical
+      receiver: "critical-webhook"
+      repeat_interval: 1h
+      continue: true
+
+    # Warning alerts: standard repeat interval
+    - match:
+        severity: warning
+      receiver: "default-webhook"
+      repeat_interval: 4h
+
+    # Security alerts: always route to security team
+    - match:
+        service: security
+      receiver: "security-webhook"
+      repeat_interval: 30m
+
+# Inhibition rules - prevent redundant alerts
+inhibit_rules:
+  # If a critical alert fires, suppress warnings for the same service
+  - source_match:
+      severity: "critical"
+    target_match:
+      severity: "warning"
+    equal: ["alertname", "service"]
+
+receivers:
+  - name: "default-webhook"
+    webhook_configs:
+      - url: "http://webhook-handler:5001/alerts/default"
+        send_resolved: true
+    # Uncomment for email notifications:
+    # email_configs:
+    #   - to: 'team@sentinelai.example.com'
+    #     send_resolved: true
+
+  - name: "critical-webhook"
+    webhook_configs:
+      - url: "http://webhook-handler:5001/alerts/critical"
+        send_resolved: true
+    # Uncomment for PagerDuty integration:
+    # pagerduty_configs:
+    #   - service_key: '<PAGERDUTY_SERVICE_KEY>'
+
+  - name: "security-webhook"
+    webhook_configs:
+      - url: "http://webhook-handler:5001/alerts/security"
+        send_resolved: true
+    # Uncomment for Slack notifications:
+    # slack_configs:
+    #   - api_url: '<SLACK_WEBHOOK_URL>'
+    #     channel: '#security-alerts'
+    #     title: '{{ .GroupLabels.alertname }}'
+    #     text: '{{ range .Alerts }}{{ .Annotations.description }}{{ end }}'
+
+# Templates for notification messages
+templates:
+  - "/etc/alertmanager/templates/*.tmpl"

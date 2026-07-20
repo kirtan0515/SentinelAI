@@ -1,0 +1,373 @@
+{
+  "annotations": {
+    "list": [
+      {
+        "builtIn": 1,
+        "datasource": "-- Grafana --",
+        "enable": true,
+        "hide": true,
+        "iconColor": "rgba(0, 211, 255, 1)",
+        "name": "Annotations & Alerts",
+        "type": "dashboard"
+      }
+    ]
+  },
+  "description": "SentinelAI Production Monitoring Dashboard",
+  "editable": true,
+  "fiscalYearStartMonth": 0,
+  "graphTooltip": 1,
+  "id": null,
+  "links": [],
+  "liveNow": false,
+  "panels": [
+    {
+      "collapsed": false,
+      "gridPos": { "h": 1, "w": 24, "x": 0, "y": 0 },
+      "id": 100,
+      "title": "Request Metrics",
+      "type": "row"
+    },
+    {
+      "datasource": "Prometheus",
+      "fieldConfig": {
+        "defaults": {
+          "color": { "mode": "palette-classic" },
+          "custom": {
+            "axisCenteredZero": false,
+            "axisLabel": "req/s",
+            "drawStyle": "line",
+            "fillOpacity": 20,
+            "lineWidth": 2,
+            "pointSize": 5,
+            "showPoints": "never"
+          },
+          "unit": "reqps"
+        }
+      },
+      "gridPos": { "h": 8, "w": 8, "x": 0, "y": 1 },
+      "id": 1,
+      "title": "Request Rate",
+      "type": "timeseries",
+      "targets": [
+        {
+          "expr": "sum(rate(http_requests_total{job=\"sentinelai-backend\"}[5m]))",
+          "legendFormat": "Total Requests/s"
+        },
+        {
+          "expr": "sum(rate(http_requests_total{job=\"sentinelai-backend\", status=~\"2..\"}[5m]))",
+          "legendFormat": "2xx Success/s"
+        }
+      ]
+    },
+    {
+      "datasource": "Prometheus",
+      "fieldConfig": {
+        "defaults": {
+          "color": { "mode": "palette-classic" },
+          "custom": {
+            "axisCenteredZero": false,
+            "drawStyle": "line",
+            "fillOpacity": 20,
+            "lineWidth": 2,
+            "showPoints": "never"
+          },
+          "unit": "reqps"
+        }
+      },
+      "gridPos": { "h": 8, "w": 8, "x": 8, "y": 1 },
+      "id": 2,
+      "title": "Error Rate",
+      "type": "timeseries",
+      "targets": [
+        {
+          "expr": "sum(rate(http_requests_total{job=\"sentinelai-backend\", status=~\"4..\"}[5m]))",
+          "legendFormat": "4xx Client Errors/s"
+        },
+        {
+          "expr": "sum(rate(http_requests_total{job=\"sentinelai-backend\", status=~\"5..\"}[5m]))",
+          "legendFormat": "5xx Server Errors/s"
+        }
+      ]
+    },
+    {
+      "datasource": "Prometheus",
+      "fieldConfig": {
+        "defaults": {
+          "color": { "mode": "palette-classic" },
+          "custom": {
+            "axisCenteredZero": false,
+            "drawStyle": "line",
+            "fillOpacity": 10,
+            "lineWidth": 2,
+            "showPoints": "never"
+          },
+          "unit": "s"
+        }
+      },
+      "gridPos": { "h": 8, "w": 8, "x": 16, "y": 1 },
+      "id": 3,
+      "title": "Latency Percentiles",
+      "type": "timeseries",
+      "targets": [
+        {
+          "expr": "histogram_quantile(0.50, sum(rate(http_request_duration_seconds_bucket{job=\"sentinelai-backend\"}[5m])) by (le))",
+          "legendFormat": "p50"
+        },
+        {
+          "expr": "histogram_quantile(0.95, sum(rate(http_request_duration_seconds_bucket{job=\"sentinelai-backend\"}[5m])) by (le))",
+          "legendFormat": "p95"
+        },
+        {
+          "expr": "histogram_quantile(0.99, sum(rate(http_request_duration_seconds_bucket{job=\"sentinelai-backend\"}[5m])) by (le))",
+          "legendFormat": "p99"
+        }
+      ]
+    },
+    {
+      "collapsed": false,
+      "gridPos": { "h": 1, "w": 24, "x": 0, "y": 9 },
+      "id": 101,
+      "title": "Security Events",
+      "type": "row"
+    },
+    {
+      "datasource": "Prometheus",
+      "fieldConfig": {
+        "defaults": {
+          "color": { "mode": "palette-classic" },
+          "custom": {
+            "drawStyle": "bars",
+            "fillOpacity": 80,
+            "lineWidth": 1
+          },
+          "unit": "short"
+        }
+      },
+      "gridPos": { "h": 8, "w": 12, "x": 0, "y": 10 },
+      "id": 4,
+      "title": "Security Events (Blocked / Flagged)",
+      "type": "timeseries",
+      "targets": [
+        {
+          "expr": "sum(rate(sentinelai_security_events_total{action=\"blocked\"}[5m])) * 300",
+          "legendFormat": "Blocked"
+        },
+        {
+          "expr": "sum(rate(sentinelai_security_events_total{action=\"flagged\"}[5m])) * 300",
+          "legendFormat": "Flagged"
+        },
+        {
+          "expr": "sum(rate(sentinelai_rate_limit_exceeded_total[5m])) * 300",
+          "legendFormat": "Rate Limited"
+        }
+      ]
+    },
+    {
+      "datasource": "Prometheus",
+      "fieldConfig": {
+        "defaults": {
+          "color": { "mode": "palette-classic" },
+          "custom": {
+            "drawStyle": "bars",
+            "fillOpacity": 60,
+            "lineWidth": 1,
+            "stacking": { "mode": "normal" }
+          },
+          "unit": "short"
+        }
+      },
+      "gridPos": { "h": 8, "w": 12, "x": 12, "y": 10 },
+      "id": 5,
+      "title": "Security Event Types",
+      "type": "timeseries",
+      "targets": [
+        {
+          "expr": "sum(rate(sentinelai_security_events_total{type=\"prompt_injection\"}[5m])) * 300",
+          "legendFormat": "Prompt Injection"
+        },
+        {
+          "expr": "sum(rate(sentinelai_security_events_total{type=\"jailbreak\"}[5m])) * 300",
+          "legendFormat": "Jailbreak Attempt"
+        },
+        {
+          "expr": "sum(rate(sentinelai_security_events_total{type=\"pii_leak\"}[5m])) * 300",
+          "legendFormat": "PII Leak Detected"
+        },
+        {
+          "expr": "sum(rate(sentinelai_security_events_total{type=\"data_exfiltration\"}[5m])) * 300",
+          "legendFormat": "Data Exfiltration"
+        }
+      ]
+    },
+    {
+      "collapsed": false,
+      "gridPos": { "h": 1, "w": 24, "x": 0, "y": 18 },
+      "id": 102,
+      "title": "Model Usage",
+      "type": "row"
+    },
+    {
+      "datasource": "Prometheus",
+      "fieldConfig": {
+        "defaults": {
+          "color": { "mode": "palette-classic" },
+          "custom": {
+            "drawStyle": "line",
+            "fillOpacity": 30,
+            "lineWidth": 2,
+            "stacking": { "mode": "normal" }
+          },
+          "unit": "reqps"
+        }
+      },
+      "gridPos": { "h": 8, "w": 12, "x": 0, "y": 19 },
+      "id": 6,
+      "title": "Model Usage Breakdown",
+      "type": "timeseries",
+      "targets": [
+        {
+          "expr": "sum(rate(sentinelai_model_requests_total{provider=\"openai\"}[5m]))",
+          "legendFormat": "OpenAI"
+        },
+        {
+          "expr": "sum(rate(sentinelai_model_requests_total{provider=\"anthropic\"}[5m]))",
+          "legendFormat": "Anthropic"
+        },
+        {
+          "expr": "sum(rate(sentinelai_model_requests_total{provider=\"ollama\"}[5m]))",
+          "legendFormat": "Ollama (Local)"
+        },
+        {
+          "expr": "sum(rate(sentinelai_model_requests_total{provider=\"google\"}[5m]))",
+          "legendFormat": "Google"
+        }
+      ]
+    },
+    {
+      "datasource": "Prometheus",
+      "fieldConfig": {
+        "defaults": {
+          "color": { "mode": "palette-classic" },
+          "custom": {
+            "drawStyle": "line",
+            "fillOpacity": 10,
+            "lineWidth": 2
+          },
+          "unit": "s"
+        }
+      },
+      "gridPos": { "h": 8, "w": 12, "x": 12, "y": 19 },
+      "id": 7,
+      "title": "Model Response Latency by Provider",
+      "type": "timeseries",
+      "targets": [
+        {
+          "expr": "histogram_quantile(0.95, sum(rate(sentinelai_model_latency_seconds_bucket{provider=\"openai\"}[5m])) by (le))",
+          "legendFormat": "OpenAI p95"
+        },
+        {
+          "expr": "histogram_quantile(0.95, sum(rate(sentinelai_model_latency_seconds_bucket{provider=\"anthropic\"}[5m])) by (le))",
+          "legendFormat": "Anthropic p95"
+        },
+        {
+          "expr": "histogram_quantile(0.95, sum(rate(sentinelai_model_latency_seconds_bucket{provider=\"ollama\"}[5m])) by (le))",
+          "legendFormat": "Ollama p95"
+        }
+      ]
+    },
+    {
+      "collapsed": false,
+      "gridPos": { "h": 1, "w": 24, "x": 0, "y": 27 },
+      "id": 103,
+      "title": "System Resources",
+      "type": "row"
+    },
+    {
+      "datasource": "Prometheus",
+      "fieldConfig": {
+        "defaults": {
+          "color": { "mode": "palette-classic" },
+          "custom": {
+            "drawStyle": "line",
+            "fillOpacity": 20,
+            "lineWidth": 2
+          },
+          "max": 100,
+          "min": 0,
+          "unit": "percent"
+        }
+      },
+      "gridPos": { "h": 8, "w": 12, "x": 0, "y": 28 },
+      "id": 8,
+      "title": "CPU Usage",
+      "type": "timeseries",
+      "targets": [
+        {
+          "expr": "100 - (avg(rate(node_cpu_seconds_total{mode=\"idle\"}[5m])) * 100)",
+          "legendFormat": "System CPU %"
+        },
+        {
+          "expr": "sum(rate(container_cpu_usage_seconds_total{container=\"backend\"}[5m])) * 100",
+          "legendFormat": "Backend CPU %"
+        },
+        {
+          "expr": "sum(rate(container_cpu_usage_seconds_total{container=\"frontend\"}[5m])) * 100",
+          "legendFormat": "Frontend CPU %"
+        }
+      ]
+    },
+    {
+      "datasource": "Prometheus",
+      "fieldConfig": {
+        "defaults": {
+          "color": { "mode": "palette-classic" },
+          "custom": {
+            "drawStyle": "line",
+            "fillOpacity": 20,
+            "lineWidth": 2
+          },
+          "unit": "bytes"
+        }
+      },
+      "gridPos": { "h": 8, "w": 12, "x": 12, "y": 28 },
+      "id": 9,
+      "title": "Memory Usage",
+      "type": "timeseries",
+      "targets": [
+        {
+          "expr": "container_memory_usage_bytes{container=\"backend\"}",
+          "legendFormat": "Backend Memory"
+        },
+        {
+          "expr": "container_memory_usage_bytes{container=\"frontend\"}",
+          "legendFormat": "Frontend Memory"
+        },
+        {
+          "expr": "container_memory_usage_bytes{container=\"postgres\"}",
+          "legendFormat": "PostgreSQL Memory"
+        },
+        {
+          "expr": "container_memory_usage_bytes{container=\"redis\"}",
+          "legendFormat": "Redis Memory"
+        }
+      ]
+    }
+  ],
+  "refresh": "30s",
+  "schemaVersion": 38,
+  "style": "dark",
+  "tags": ["sentinelai", "production"],
+  "templating": {
+    "list": []
+  },
+  "time": {
+    "from": "now-1h",
+    "to": "now"
+  },
+  "timepicker": {},
+  "timezone": "browser",
+  "title": "SentinelAI Production Dashboard",
+  "uid": "sentinelai-prod",
+  "version": 1,
+  "weekStart": ""
+}

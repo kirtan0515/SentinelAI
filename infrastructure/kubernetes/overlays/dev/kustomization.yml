@@ -1,0 +1,92 @@
+apiVersion: kustomize.config.k8s.io/v1beta1
+kind: Kustomization
+
+namespace: sentinelai
+
+resources:
+  - ../../base/namespace.yml
+  - ../../base/configmap.yml
+  - ../../base/secrets.yml
+  - ../../base/backend-deployment.yml
+  - ../../base/backend-service.yml
+  - ../../base/frontend-deployment.yml
+  - ../../base/frontend-service.yml
+  - ../../base/redis-deployment.yml
+  - ../../base/postgres-statefulset.yml
+  - ../../base/ingress.yml
+
+# Dev-specific patches
+patches:
+  # Backend: 1 replica, lower resources
+  - target:
+      kind: Deployment
+      name: sentinelai-backend
+    patch: |
+      - op: replace
+        path: /spec/replicas
+        value: 1
+      - op: replace
+        path: /spec/template/spec/containers/0/resources/requests/cpu
+        value: "100m"
+      - op: replace
+        path: /spec/template/spec/containers/0/resources/requests/memory
+        value: "256Mi"
+      - op: replace
+        path: /spec/template/spec/containers/0/resources/limits/cpu
+        value: "500m"
+      - op: replace
+        path: /spec/template/spec/containers/0/resources/limits/memory
+        value: "512Mi"
+
+  # Frontend: 1 replica, lower resources
+  - target:
+      kind: Deployment
+      name: sentinelai-frontend
+    patch: |
+      - op: replace
+        path: /spec/replicas
+        value: 1
+      - op: replace
+        path: /spec/template/spec/containers/0/resources/requests/cpu
+        value: "50m"
+      - op: replace
+        path: /spec/template/spec/containers/0/resources/requests/memory
+        value: "128Mi"
+      - op: replace
+        path: /spec/template/spec/containers/0/resources/limits/cpu
+        value: "250m"
+      - op: replace
+        path: /spec/template/spec/containers/0/resources/limits/memory
+        value: "256Mi"
+
+  # Postgres: lower storage
+  - target:
+      kind: StatefulSet
+      name: sentinelai-postgres
+    patch: |
+      - op: replace
+        path: /spec/template/spec/containers/0/resources/requests/cpu
+        value: "100m"
+      - op: replace
+        path: /spec/template/spec/containers/0/resources/requests/memory
+        value: "256Mi"
+      - op: replace
+        path: /spec/template/spec/containers/0/resources/limits/cpu
+        value: "500m"
+      - op: replace
+        path: /spec/template/spec/containers/0/resources/limits/memory
+        value: "512Mi"
+
+# Dev ConfigMap overrides
+configMapGenerator:
+  - name: sentinelai-config
+    behavior: merge
+    literals:
+      - APP_ENV=development
+      - DEBUG=true
+      - CORS_ORIGINS=http://localhost:3000,http://localhost:8000
+      - RATE_LIMIT_PER_MINUTE=120
+      - RATE_LIMIT_PER_HOUR=5000
+
+commonLabels:
+  environment: dev

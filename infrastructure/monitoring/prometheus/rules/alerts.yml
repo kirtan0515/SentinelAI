@@ -1,0 +1,121 @@
+groups:
+  - name: sentinelai_availability
+    rules:
+      - alert: BackendServiceDown
+        expr: up{job="sentinelai-backend"} == 0
+        for: 1m
+        labels:
+          severity: critical
+          service: backend
+        annotations:
+          summary: "Backend service is down"
+          description: "The SentinelAI backend service has been unreachable for more than 1 minute."
+          runbook_url: "https://docs.sentinelai.example.com/runbooks/backend-down"
+
+      - alert: FrontendServiceDown
+        expr: up{job="sentinelai-frontend"} == 0
+        for: 1m
+        labels:
+          severity: critical
+          service: frontend
+        annotations:
+          summary: "Frontend service is down"
+          description: "The SentinelAI frontend service has been unreachable for more than 1 minute."
+
+  - name: sentinelai_performance
+    rules:
+      - alert: HighErrorRate
+        expr: |
+          (sum(rate(http_requests_total{job="sentinelai-backend",status=~"5.."}[5m]))
+          / sum(rate(http_requests_total{job="sentinelai-backend"}[5m]))) > 0.05
+        for: 5m
+        labels:
+          severity: critical
+          service: backend
+        annotations:
+          summary: "High error rate detected (>5%)"
+          description: "The 5xx error rate is {{ $value | humanizePercentage }} over the last 5 minutes."
+          runbook_url: "https://docs.sentinelai.example.com/runbooks/high-error-rate"
+
+      - alert: HighLatencyP95
+        expr: |
+          histogram_quantile(0.95, sum(rate(http_request_duration_seconds_bucket{job="sentinelai-backend"}[5m])) by (le)) > 2
+        for: 5m
+        labels:
+          severity: warning
+          service: backend
+        annotations:
+          summary: "High p95 latency (>2s)"
+          description: "The p95 response latency is {{ $value }}s over the last 5 minutes."
+
+      - alert: HighLatencyP99
+        expr: |
+          histogram_quantile(0.99, sum(rate(http_request_duration_seconds_bucket{job="sentinelai-backend"}[5m])) by (le)) > 5
+        for: 5m
+        labels:
+          severity: critical
+          service: backend
+        annotations:
+          summary: "Critical p99 latency (>5s)"
+          description: "The p99 response latency is {{ $value }}s."
+
+  - name: sentinelai_security
+    rules:
+      - alert: SecurityAttackSpike
+        expr: |
+          sum(rate(security_events_total{job="sentinelai-backend",action="blocked"}[5m])) * 60 > 50
+        for: 2m
+        labels:
+          severity: critical
+          service: security
+        annotations:
+          summary: "Security attack spike detected (>50 blocked/min)"
+          description: "More than 50 requests per minute are being blocked by security guardrails. Possible attack in progress."
+          runbook_url: "https://docs.sentinelai.example.com/runbooks/security-spike"
+
+      - alert: GuardrailBlockRateHigh
+        expr: |
+          (sum(rate(guardrail_checks_total{result="blocked"}[5m]))
+          / sum(rate(guardrail_checks_total[5m]))) > 0.20
+        for: 10m
+        labels:
+          severity: warning
+          service: security
+        annotations:
+          summary: "High guardrail block rate (>20%)"
+          description: "{{ $value | humanizePercentage }} of requests are being blocked by guardrails."
+
+  - name: sentinelai_resources
+    rules:
+      - alert: HighCPUUsage
+        expr: |
+          rate(container_cpu_usage_seconds_total{namespace="sentinelai",container!=""}[5m]) > 0.8
+        for: 10m
+        labels:
+          severity: warning
+          service: infrastructure
+        annotations:
+          summary: "High CPU usage on {{ $labels.pod }}"
+          description: "Pod {{ $labels.pod }} CPU usage is above 80% for 10 minutes."
+
+      - alert: HighMemoryUsage
+        expr: |
+          container_memory_working_set_bytes{namespace="sentinelai",container!=""}
+          / container_spec_memory_limit_bytes{namespace="sentinelai",container!=""} > 0.85
+        for: 5m
+        labels:
+          severity: warning
+          service: infrastructure
+        annotations:
+          summary: "High memory usage on {{ $labels.pod }}"
+          description: "Pod {{ $labels.pod }} memory usage is above 85% of limit."
+
+      - alert: DatabaseConnectionsHigh
+        expr: pg_stat_activity_count{datname="sentinelai"} > 150
+        for: 5m
+        labels:
+          severity: warning
+          service: database
+        annotations:
+          summary: "High database connection count"
+          description: "Database connections ({{ $value }}) approaching max_connections limit."

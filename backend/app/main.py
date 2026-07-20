@@ -13,6 +13,7 @@ from app.api.v1.router import api_router
 from app.core.config import settings
 from app.core.database import engine
 from app.middleware.rate_limiter import RateLimiterMiddleware
+from app.middleware.security_headers import SecurityHeadersMiddleware
 
 
 @asynccontextmanager
@@ -42,6 +43,9 @@ app.add_middleware(
     allow_methods=["*"],
     allow_headers=["*"],
 )
+
+# Security Headers Middleware
+app.add_middleware(SecurityHeadersMiddleware)
 
 # Rate Limiting Middleware
 app.add_middleware(RateLimiterMiddleware)

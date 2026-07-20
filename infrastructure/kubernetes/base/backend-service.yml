@@ -1,0 +1,18 @@
+apiVersion: v1
+kind: Service
+metadata:
+  name: sentinelai-backend
+  namespace: sentinelai
+  labels:
+    app: sentinelai
+    component: backend
+spec:
+  type: ClusterIP
+  selector:
+    app: sentinelai
+    component: backend
+  ports:
+    - name: http
+      port: 8000
+      targetPort: 8000
+      protocol: TCP
