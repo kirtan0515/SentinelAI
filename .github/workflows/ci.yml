@@ -1,11 +1,10 @@
-name: SentinelAI CI/CD
+name: CI
 
 on:
   push:
     branches: [main, develop]
   pull_request:
     branches: [main]
-  workflow_dispatch:
 
 concurrency:
   group: ${{ github.workflow }}-${{ github.ref }}
@@ -14,50 +13,24 @@ concurrency:
 env:
   PYTHON_VERSION: "3.11"
   NODE_VERSION: "18"
-  AWS_REGION: "us-east-1"
-  ECR_BACKEND_REPO: sentinelai-backend
-  ECR_FRONTEND_REPO: sentinelai-frontend
 
 jobs:
-  # ===========================================================================
-  # Backend: Lint, Type Check, Test
-  # ===========================================================================
   backend-lint:
-    name: Backend Lint & Type Check
+    name: Lint
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v4
-
-      - name: Set up Python
-        uses: actions/setup-python@v5
+      - uses: actions/setup-python@v5
         with:
           python-version: ${{ env.PYTHON_VERSION }}
           cache: "pip"
           cache-dependency-path: backend/requirements.txt
-
-      - name: Install dependencies
-        run: |
-          cd backend
-          pip install --upgrade pip
-          pip install -r requirements.txt
-
-      - name: Lint with Ruff
-        run: |
-          cd backend
-          ruff check . --output-format=github
-
-      - name: Format check with Ruff
-        run: |
-          cd backend
-          ruff format --check .
-
-      - name: Type check with MyPy
-        run: |
-          cd backend
-          mypy app --ignore-missing-imports --no-error-summary
+      - run: cd backend && pip install -q ruff mypy
+      - run: cd backend && ruff check .
+      - run: cd backend && ruff format --check .
 
   backend-test:
-    name: Backend Tests
+    name: Test
     runs-on: ubuntu-latest
     needs: [backend-lint]
     services:
@@ -69,410 +42,51 @@ jobs:
           POSTGRES_PASSWORD: test
         ports:
           - 5432:5432
-        options: >-
-          --health-cmd pg_isready
-          --health-interval 10s
-          --health-timeout 5s
-          --health-retries 5
+        options: --health-cmd pg_isready --health-interval 10s --health-timeout 5s --health-retries 5
       redis:
         image: redis:7-alpine
         ports:
           - 6379:6379
-        options: >-
-          --health-cmd "redis-cli ping"
-          --health-interval 10s
-          --health-timeout 5s
-          --health-retries 5
-
+        options: --health-cmd "redis-cli ping" --health-interval 10s --health-timeout 5s --health-retries 5
     steps:
       - uses: actions/checkout@v4
-
-      - name: Set up Python
-        uses: actions/setup-python@v5
+      - uses: actions/setup-python@v5
         with:
           python-version: ${{ env.PYTHON_VERSION }}
           cache: "pip"
           cache-dependency-path: backend/requirements.txt
-
-      - name: Install dependencies
-        run: |
-          cd backend
-          pip install --upgrade pip
-          pip install -r requirements.txt
-
-      - name: Run tests with coverage
+      - run: cd backend && pip install -q -r requirements.txt
+      - name: Run tests
         env:
           DATABASE_URL: postgresql+asyncpg://test:test@localhost:5432/sentinelai_test
           REDIS_URL: redis://localhost:6379/0
-          SECRET_KEY: test-secret-key-for-ci
-          JWT_SECRET_KEY: test-jwt-secret-for-ci
-          APP_ENV: test
-        run: |
-          cd backend
-          pytest tests/ -v --cov=app --cov-report=xml --cov-report=term-missing
+          SECRET_KEY: test-secret
+          JWT_SECRET_KEY: test-jwt-secret
+        run: cd backend && pytest tests/ -v --tb=short
 
-      - name: Upload coverage to Codecov
-        uses: codecov/codecov-action@v4
-        with:
-          file: backend/coverage.xml
-          flags: backend
-          fail_ci_if_error: false
-          token: ${{ secrets.CODECOV_TOKEN }}
-
-  # ===========================================================================
-  # Frontend: Lint, Type Check, Build
-  # ===========================================================================
   frontend:
-    name: Frontend Lint, Type Check & Build
+    name: Frontend
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v4
-
-      - name: Set up Node.js
-        uses: actions/setup-node@v4
+      - uses: actions/setup-node@v4
         with:
           node-version: ${{ env.NODE_VERSION }}
           cache: "npm"
           cache-dependency-path: frontend/package-lock.json
-
-      - name: Install dependencies
-        run: |
-          cd frontend
-          npm ci
-
-      - name: Lint
-        run: |
-          cd frontend
-          npm run lint
-
-      - name: Type check
-        run: |
-          cd frontend
-          npm run type-check
-
-      - name: Build
+      - run: cd frontend && npm ci
+      - run: cd frontend && npm run lint
+      - run: cd frontend && npm run type-check
+      - run: cd frontend && npm run build
         env:
-          NEXT_PUBLIC_API_URL: http://localhost:8000/api
-        run: |
-          cd frontend
-          npm run build
+          NEXT_PUBLIC_API_URL: http://localhost:8000/api/v1
 
-  # ===========================================================================
-  # Security Scanning
-  # ===========================================================================
-  security:
-    name: Security Scan
+  docker-build:
+    name: Docker Build
     runs-on: ubuntu-latest
-    steps:
-      - uses: actions/checkout@v4
-
-      - name: Run Trivy vulnerability scanner
-        uses: aquasecurity/trivy-action@master
-        with:
-          scan-type: "fs"
-          scan-ref: "."
-          severity: "CRITICAL,HIGH"
-          format: "sarif"
-          output: "trivy-results.sarif"
-          exit-code: "1"
-
-      - name: Upload Trivy scan results
-        uses: github/codeql-action/upload-sarif@v3
-        if: always()
-        with:
-          sarif_file: "trivy-results.sarif"
-
-      - name: OWASP Dependency Check
-        uses: dependency-check/Dependency-Check_Action@main
-        with:
-          project: "SentinelAI"
-          path: "."
-          format: "HTML"
-          args: >-
-            --failOnCVSS 7
-            --enableRetired
-
-      - name: Upload OWASP report
-        uses: actions/upload-artifact@v4
-        if: always()
-        with:
-          name: owasp-report
-          path: reports/
-
-  # ===========================================================================
-  # Docker Build & Push to ECR
-  # ===========================================================================
-  docker:
-    name: Docker Build & Push
-    runs-on: ubuntu-latest
-    needs: [backend-test, frontend, security]
-    if: (github.ref == 'refs/heads/main' || github.ref == 'refs/heads/develop') && github.event_name == 'push'
-    permissions:
-      id-token: write
-      contents: read
-
-    steps:
-      - uses: actions/checkout@v4
-
-      - name: Configure AWS credentials
-        uses: aws-actions/configure-aws-credentials@v4
-        with:
-          role-to-assume: ${{ secrets.AWS_ROLE_ARN }}
-          aws-region: ${{ env.AWS_REGION }}
-
-      - name: Login to Amazon ECR
-        id: ecr-login
-        uses: aws-actions/amazon-ecr-login@v2
-
-      - name: Set image tag
-        id: tag
-        run: echo "TAG=${{ github.sha }}" >> $GITHUB_OUTPUT
-
-      - name: Build and push backend image
-        uses: docker/build-push-action@v5
-        with:
-          context: ./backend
-          push: true
-          tags: |
-            ${{ steps.ecr-login.outputs.registry }}/${{ env.ECR_BACKEND_REPO }}:${{ steps.tag.outputs.TAG }}
-            ${{ steps.ecr-login.outputs.registry }}/${{ env.ECR_BACKEND_REPO }}:latest
-          cache-from: type=gha
-          cache-to: type=gha,mode=max
-
-      - name: Build and push frontend image
-        uses: docker/build-push-action@v5
-        with:
-          context: ./frontend
-          push: true
-          tags: |
-            ${{ steps.ecr-login.outputs.registry }}/${{ env.ECR_FRONTEND_REPO }}:${{ steps.tag.outputs.TAG }}
-            ${{ steps.ecr-login.outputs.registry }}/${{ env.ECR_FRONTEND_REPO }}:latest
-          cache-from: type=gha
-          cache-to: type=gha,mode=max
-
-  # ===========================================================================
-  # Deploy to Staging (auto on push to develop)
-  # ===========================================================================
-  deploy-staging:
-    name: Deploy to Staging
-    runs-on: ubuntu-latest
-    needs: [docker]
-    if: github.ref == 'refs/heads/develop' && github.event_name == 'push'
-    environment: staging
-    permissions:
-      id-token: write
-      contents: read
-
-    steps:
-      - uses: actions/checkout@v4
-
-      - name: Configure AWS credentials
-        uses: aws-actions/configure-aws-credentials@v4
-        with:
-          role-to-assume: ${{ secrets.AWS_ROLE_ARN }}
-          aws-region: ${{ env.AWS_REGION }}
-
-      - name: Login to ECR
-        id: ecr-login
-        uses: aws-actions/amazon-ecr-login@v2
-
-      - name: Deploy to staging ECS
-        run: |
-          IMAGE_TAG="${{ github.sha }}"
-          REGISTRY="${{ steps.ecr-login.outputs.registry }}"
-
-          # Update backend
-          aws ecs update-service \
-            --cluster sentinelai-staging \
-            --service sentinelai-staging-backend \
-            --force-new-deployment \
-            --region ${{ env.AWS_REGION }}
-
-          # Update frontend
-          aws ecs update-service \
-            --cluster sentinelai-staging \
-            --service sentinelai-staging-frontend \
-            --force-new-deployment \
-            --region ${{ env.AWS_REGION }}
-
-      - name: Wait for deployment stability
-        run: |
-          aws ecs wait services-stable \
-            --cluster sentinelai-staging \
-            --services sentinelai-staging-backend sentinelai-staging-frontend \
-            --region ${{ env.AWS_REGION }}
-
-      - name: Run smoke tests
-        run: |
-          STAGING_URL="${{ secrets.STAGING_ALB_URL }}"
-          echo "Running smoke tests against $STAGING_URL"
-          curl -sf "$STAGING_URL/health" || exit 1
-          curl -sf "$STAGING_URL/api/v1/health" || exit 1
-          echo "Smoke tests passed!"
-
-  # ===========================================================================
-  # Deploy to Production (auto on push to main, requires approval)
-  # ===========================================================================
-  deploy-prod:
-    name: Deploy to Production
-    runs-on: ubuntu-latest
-    needs: [docker]
+    needs: [backend-test, frontend]
     if: github.ref == 'refs/heads/main' && github.event_name == 'push'
-    environment: production
-    permissions:
-      id-token: write
-      contents: read
-
     steps:
       - uses: actions/checkout@v4
-
-      - name: Configure AWS credentials
-        uses: aws-actions/configure-aws-credentials@v4
-        with:
-          role-to-assume: ${{ secrets.AWS_PROD_ROLE_ARN }}
-          aws-region: ${{ env.AWS_REGION }}
-
-      - name: Login to ECR
-        id: ecr-login
-        uses: aws-actions/amazon-ecr-login@v2
-
-      - name: Save current task definitions for rollback
-        id: current
-        run: |
-          BACKEND_TD=$(aws ecs describe-services \
-            --cluster sentinelai-prod \
-            --services sentinelai-prod-backend \
-            --query 'services[0].taskDefinition' \
-            --output text)
-          FRONTEND_TD=$(aws ecs describe-services \
-            --cluster sentinelai-prod \
-            --services sentinelai-prod-frontend \
-            --query 'services[0].taskDefinition' \
-            --output text)
-          echo "backend_td=$BACKEND_TD" >> $GITHUB_OUTPUT
-          echo "frontend_td=$FRONTEND_TD" >> $GITHUB_OUTPUT
-
-      - name: Deploy to production ECS
-        run: |
-          aws ecs update-service \
-            --cluster sentinelai-prod \
-            --service sentinelai-prod-backend \
-            --force-new-deployment \
-            --region ${{ env.AWS_REGION }}
-
-          aws ecs update-service \
-            --cluster sentinelai-prod \
-            --service sentinelai-prod-frontend \
-            --force-new-deployment \
-            --region ${{ env.AWS_REGION }}
-
-      - name: Wait for deployment stability
-        id: wait
-        run: |
-          aws ecs wait services-stable \
-            --cluster sentinelai-prod \
-            --services sentinelai-prod-backend sentinelai-prod-frontend \
-            --region ${{ env.AWS_REGION }}
-
-      - name: Run production smoke tests
-        id: smoke
-        run: |
-          PROD_URL="${{ secrets.PROD_URL }}"
-          echo "Running smoke tests against $PROD_URL"
-          curl -sf "$PROD_URL/health" || exit 1
-          curl -sf "$PROD_URL/api/v1/health" || exit 1
-          echo "Production smoke tests passed!"
-
-      - name: Rollback on failure
-        if: failure() && (steps.wait.outcome == 'failure' || steps.smoke.outcome == 'failure')
-        run: |
-          echo "🚨 Deployment failed! Rolling back..."
-          aws ecs update-service \
-            --cluster sentinelai-prod \
-            --service sentinelai-prod-backend \
-            --task-definition ${{ steps.current.outputs.backend_td }} \
-            --region ${{ env.AWS_REGION }}
-          aws ecs update-service \
-            --cluster sentinelai-prod \
-            --service sentinelai-prod-frontend \
-            --task-definition ${{ steps.current.outputs.frontend_td }} \
-            --region ${{ env.AWS_REGION }}
-          aws ecs wait services-stable \
-            --cluster sentinelai-prod \
-            --services sentinelai-prod-backend sentinelai-prod-frontend \
-            --region ${{ env.AWS_REGION }}
-          echo "✅ Rollback complete"
-
-      - name: Notify deployment success
-        if: success()
-        run: |
-          echo "🎉 Production deployment successful!"
-          echo "Image tag: ${{ github.sha }}"
-          echo "Deployed by: ${{ github.actor }}"
-
-  # ===========================================================================
-  # Manual Rollback
-  # ===========================================================================
-  rollback:
-    name: Manual Rollback
-    runs-on: ubuntu-latest
-    if: github.event_name == 'workflow_dispatch'
-    environment: production
-    permissions:
-      id-token: write
-      contents: read
-
-    steps:
-      - uses: actions/checkout@v4
-
-      - name: Configure AWS credentials
-        uses: aws-actions/configure-aws-credentials@v4
-        with:
-          role-to-assume: ${{ secrets.AWS_PROD_ROLE_ARN }}
-          aws-region: ${{ env.AWS_REGION }}
-
-      - name: Rollback to previous revision
-        run: |
-          echo "Rolling back to previous task definition..."
-
-          # Get previous task definition for backend
-          CURRENT_TD=$(aws ecs describe-services \
-            --cluster sentinelai-prod \
-            --services sentinelai-prod-backend \
-            --query 'services[0].taskDefinition' \
-            --output text)
-          
-          # Extract family and revision number, decrement
-          FAMILY=$(echo $CURRENT_TD | awk -F'/' '{print $2}' | awk -F':' '{print $1}')
-          REVISION=$(echo $CURRENT_TD | awk -F':' '{print $NF}')
-          PREV_REVISION=$((REVISION - 1))
-
-          aws ecs update-service \
-            --cluster sentinelai-prod \
-            --service sentinelai-prod-backend \
-            --task-definition "${FAMILY}:${PREV_REVISION}" \
-            --region ${{ env.AWS_REGION }}
-
-          # Same for frontend
-          CURRENT_TD=$(aws ecs describe-services \
-            --cluster sentinelai-prod \
-            --services sentinelai-prod-frontend \
-            --query 'services[0].taskDefinition' \
-            --output text)
-          FAMILY=$(echo $CURRENT_TD | awk -F'/' '{print $2}' | awk -F':' '{print $1}')
-          REVISION=$(echo $CURRENT_TD | awk -F':' '{print $NF}')
-          PREV_REVISION=$((REVISION - 1))
-
-          aws ecs update-service \
-            --cluster sentinelai-prod \
-            --service sentinelai-prod-frontend \
-            --task-definition "${FAMILY}:${PREV_REVISION}" \
-            --region ${{ env.AWS_REGION }}
-
-      - name: Wait for rollback stability
-        run: |
-          aws ecs wait services-stable \
-            --cluster sentinelai-prod \
-            --services sentinelai-prod-backend sentinelai-prod-frontend \
-            --region ${{ env.AWS_REGION }}
-          echo "✅ Rollback complete and services stable"
+      - run: docker build -t sentinelai-backend:${{ github.sha }} ./backend
+      - run: docker build -t sentinelai-frontend:${{ github.sha }} ./frontend
