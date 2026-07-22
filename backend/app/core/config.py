@@ -48,7 +48,7 @@ class Settings(BaseSettings):
     GOOGLE_API_KEY: str = ""
     GEMINI_MODEL: str = "gemini-pro"
     OLLAMA_HOST: str = "http://localhost:11434"
-    OLLAMA_MODEL: str = "llama2"
+    OLLAMA_MODEL: str = "llama3"
 
     # Rate Limiting
     RATE_LIMIT_PER_MINUTE: int = 60

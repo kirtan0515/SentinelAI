@@ -55,7 +55,7 @@ class ChatService:
         4. Create response
         5. Log to audit trail
         """
-        model = request.model or "gpt-4"
+        model = request.model or "llama3"
         message_for_llm = prompt_override or request.message
 
         # === Input Guardrails ===

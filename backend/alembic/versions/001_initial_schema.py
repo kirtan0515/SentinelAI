@@ -123,7 +123,7 @@ def upgrade() -> None:
     op.create_index("ix_document_chunks_document_id", "document_chunks", ["document_id"])
 
     # Add the vector column separately (pgvector type)
-    op.execute("ALTER TABLE document_chunks ADD COLUMN embedding vector(1536)")
+    op.execute("ALTER TABLE document_chunks ADD COLUMN embedding vector(768)")
 
     # Create HNSW index for fast similarity search
     op.execute(

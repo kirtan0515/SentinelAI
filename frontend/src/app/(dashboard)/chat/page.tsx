@@ -39,7 +39,7 @@ export default function ChatPage() {
   const [message, setMessage] = useState("");
   const [messages, setMessages] = useState<Message[]>([]);
   const [loading, setLoading] = useState(false);
-  const [selectedModel, setSelectedModel] = useState("gpt-4");
+  const [selectedModel, setSelectedModel] = useState("llama3");
   const [ragEnabled, setRagEnabled] = useState(false);
   const messagesEndRef = useRef<HTMLDivElement>(null);
 
@@ -153,11 +153,13 @@ export default function ChatPage() {
             onChange={(e) => setSelectedModel(e.target.value)}
             className="rounded-md border border-input bg-background px-3 py-1.5 text-xs font-medium focus:outline-none focus:ring-2 focus:ring-ring"
           >
-            <option value="gpt-4">GPT-4</option>
-            <option value="gpt-3.5-turbo">GPT-3.5 Turbo</option>
-            <option value="claude-3-sonnet">Claude 3 Sonnet</option>
-            <option value="gemini-pro">Gemini Pro</option>
-            <option value="llama2">Llama 2 (Local)</option>
+            <option value="llama3">Llama 3 (Free, Local)</option>
+            <option value="llama2">Llama 2 (Free, Local)</option>
+            <option value="mistral">Mistral (Free, Local)</option>
+            <option value="gpt-4">GPT-4 (Paid)</option>
+            <option value="gpt-3.5-turbo">GPT-3.5 Turbo (Paid)</option>
+            <option value="claude-3-sonnet">Claude 3 Sonnet (Paid)</option>
+            <option value="gemini-pro">Gemini Pro (Paid)</option>
           </select>
         </div>
       </div>

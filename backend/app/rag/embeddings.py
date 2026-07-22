@@ -1,143 +1,158 @@
 """
 Embedding Service
 
-Generates vector embeddings for text chunks using OpenAI's
-text-embedding-ada-002 model (1536 dimensions).
+Generates vector embeddings using Ollama (local, free) or OpenAI (paid, optional).
+Default: Ollama with nomic-embed-text model (768 dimensions).
+Fallback: OpenAI text-embedding-ada-002 (1536 dimensions) if OPENAI_API_KEY is set.
 
-Supports batching for efficiency and rate limit handling.
+Ollama embedding is completely free and runs on your machine.
 """
 
 import asyncio
 from typing import List
 
+import httpx
 import structlog
 
 from app.core.config import settings
 
 logger = structlog.get_logger(__name__)
 
-# OpenAI embedding model configuration
-EMBEDDING_MODEL = "text-embedding-ada-002"
-EMBEDDING_DIMENSION = 1536
-MAX_BATCH_SIZE = 100  # OpenAI limit per request
-MAX_TOKENS_PER_TEXT = 8191  # ada-002 token limit
+# Ollama embedding config (FREE, local)
+OLLAMA_EMBEDDING_MODEL = "nomic-embed-text"
+OLLAMA_EMBEDDING_DIMENSION = 768
+
+# OpenAI embedding config (paid, optional fallback)
+OPENAI_EMBEDDING_MODEL = "text-embedding-ada-002"
+OPENAI_EMBEDDING_DIMENSION = 1536
+
+# Use Ollama by default (free). Only use OpenAI if key is set AND ollama fails.
+EMBEDDING_DIMENSION = OLLAMA_EMBEDDING_DIMENSION
+MAX_BATCH_SIZE = 50
+MAX_TEXT_LENGTH = 8000  # characters
 
 
 class EmbeddingService:
     """
-    Generates text embeddings using OpenAI's embedding API.
+    Generates text embeddings locally using Ollama (free).
 
-    Features:
-    - Batch processing for efficiency
-    - Automatic chunking of large batches
-    - Retry handling for rate limits
-    - Dimension validation
+    Priority:
+    1. Ollama (local, free) — uses nomic-embed-text model
+    2. OpenAI (paid) — only if OPENAI_API_KEY is set and Ollama unavailable
+
+    Before first use, pull the embedding model:
+        ollama pull nomic-embed-text
     """
 
     def __init__(self):
-        self._client = None
-
-    def _get_client(self):
-        """Lazy-initialize OpenAI client."""
-        if self._client is None:
-            from openai import AsyncOpenAI
-
-            self._client = AsyncOpenAI(api_key=settings.OPENAI_API_KEY)
-        return self._client
+        self._ollama_url = settings.OLLAMA_HOST
+        self._use_openai_fallback = bool(settings.OPENAI_API_KEY)
 
     async def generate_embedding(self, text: str) -> List[float]:
         """
         Generate embedding for a single text.
 
-        Args:
-            text: Input text to embed
-
         Returns:
-            List of floats (1536 dimensions)
+            List of floats (768 dimensions with Ollama, 1536 with OpenAI)
         """
         embeddings = await self.generate_embeddings([text])
         return embeddings[0]
 
     async def generate_embeddings(self, texts: List[str]) -> List[List[float]]:
         """
-        Generate embeddings for multiple texts in batches.
+        Generate embeddings for multiple texts.
 
-        Args:
-            texts: List of texts to embed
-
-        Returns:
-            List of embedding vectors (each 1536 dimensions)
+        Uses Ollama locally (free). Falls back to OpenAI if configured.
         """
         if not texts:
             return []
 
-        # Clean and truncate texts
         cleaned_texts = [self._prepare_text(t) for t in texts]
 
-        # Process in batches
-        all_embeddings: List[List[float]] = []
-        batches = self._create_batches(cleaned_texts, MAX_BATCH_SIZE)
+        # Try Ollama first (free)
+        try:
+            embeddings = await self._embed_with_ollama(cleaned_texts)
+            return embeddings
+        except Exception as e:
+            logger.warning("Ollama embedding failed, checking fallback", error=str(e))
 
-        for batch_idx, batch in enumerate(batches):
+        # Fallback to OpenAI if API key is set
+        if self._use_openai_fallback:
             try:
-                batch_embeddings = await self._embed_batch(batch)
-                all_embeddings.extend(batch_embeddings)
-
-                logger.debug(
-                    "Embedding batch processed",
-                    batch=batch_idx + 1,
-                    total_batches=len(batches),
-                    texts_in_batch=len(batch),
-                )
+                embeddings = await self._embed_with_openai(cleaned_texts)
+                return embeddings
             except Exception as e:
-                logger.error(
-                    "Embedding batch failed",
-                    batch=batch_idx + 1,
-                    error=str(e),
+                logger.error("OpenAI embedding also failed", error=str(e))
+
+        # Last resort: return zero vectors
+        logger.error("All embedding providers failed, returning zero vectors")
+        return [[0.0] * EMBEDDING_DIMENSION for _ in cleaned_texts]
+
+    async def _embed_with_ollama(self, texts: List[str]) -> List[List[float]]:
+        """Generate embeddings using Ollama (free, local)."""
+        embeddings: List[List[float]] = []
+
+        async with httpx.AsyncClient() as client:
+            for i, text in enumerate(texts):
+                response = await client.post(
+                    f"{self._ollama_url}/api/embeddings",
+                    json={
+                        "model": OLLAMA_EMBEDDING_MODEL,
+                        "prompt": text,
+                    },
+                    timeout=30.0,
                 )
-                # Fill with zero vectors for failed batch
-                all_embeddings.extend(
-                    [[0.0] * EMBEDDING_DIMENSION for _ in batch]
-                )
+
+                if response.status_code != 200:
+                    raise Exception(
+                        f"Ollama embedding failed: {response.status_code} - {response.text}"
+                    )
+
+                data = response.json()
+                embedding = data.get("embedding", [])
+
+                if not embedding:
+                    raise Exception("Ollama returned empty embedding")
+
+                embeddings.append(embedding)
+
+                if (i + 1) % 10 == 0:
+                    logger.debug(
+                        "Ollama embeddings progress",
+                        completed=i + 1,
+                        total=len(texts),
+                    )
+
+        logger.info(
+            "Ollama embeddings generated",
+            count=len(embeddings),
+            dimension=len(embeddings[0]) if embeddings else 0,
+        )
+        return embeddings
+
+    async def _embed_with_openai(self, texts: List[str]) -> List[List[float]]:
+        """Generate embeddings using OpenAI API (paid fallback)."""
+        from openai import AsyncOpenAI
+
+        client = AsyncOpenAI(api_key=settings.OPENAI_API_KEY)
+        all_embeddings: List[List[float]] = []
+
+        batches = self._create_batches(texts, MAX_BATCH_SIZE)
+        for batch in batches:
+            response = await client.embeddings.create(
+                model=OPENAI_EMBEDDING_MODEL,
+                input=batch,
+            )
+            sorted_data = sorted(response.data, key=lambda x: x.index)
+            all_embeddings.extend([item.embedding for item in sorted_data])
 
         return all_embeddings
 
-    async def _embed_batch(self, texts: List[str]) -> List[List[float]]:
-        """Embed a single batch of texts via OpenAI API."""
-        client = self._get_client()
-
-        # Retry with backoff for rate limits
-        max_retries = 3
-        for attempt in range(max_retries):
-            try:
-                response = await client.embeddings.create(
-                    model=EMBEDDING_MODEL,
-                    input=texts,
-                )
-                # Sort by index to maintain order
-                sorted_data = sorted(response.data, key=lambda x: x.index)
-                return [item.embedding for item in sorted_data]
-
-            except Exception as e:
-                if "rate_limit" in str(e).lower() and attempt < max_retries - 1:
-                    wait_time = 2 ** (attempt + 1)
-                    logger.warning(
-                        "Embedding rate limited, retrying",
-                        attempt=attempt + 1,
-                        wait_seconds=wait_time,
-                    )
-                    await asyncio.sleep(wait_time)
-                else:
-                    raise
-
     def _prepare_text(self, text: str) -> str:
         """Clean and truncate text for embedding."""
-        # Remove excessive whitespace
         text = " ".join(text.split())
-        # Truncate to approximate token limit (rough: 4 chars per token)
-        max_chars = MAX_TOKENS_PER_TEXT * 4
-        if len(text) > max_chars:
-            text = text[:max_chars]
+        if len(text) > MAX_TEXT_LENGTH:
+            text = text[:MAX_TEXT_LENGTH]
         return text
 
     def _create_batches(self, items: List, batch_size: int) -> List[List]:

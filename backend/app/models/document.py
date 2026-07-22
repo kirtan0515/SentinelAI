@@ -55,7 +55,7 @@ class DocumentChunk(Base):
     )
     content: Mapped[str] = mapped_column(Text, nullable=False)
     chunk_index: Mapped[int] = mapped_column(Integer, nullable=False)
-    embedding = mapped_column(Vector(1536), nullable=True)  # OpenAI embedding dimension
+    embedding = mapped_column(Vector(768), nullable=True)  # Ollama nomic-embed-text dimension
     metadata_json: Mapped[str] = mapped_column(Text, nullable=True)
     created_at: Mapped[datetime] = mapped_column(
         DateTime(timezone=True), default=lambda: datetime.now(timezone.utc)

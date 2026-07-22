@@ -85,33 +85,62 @@ SentinelAI/
 ```
 
 ## Quick Start
+## Quick Start (100% Free)
 
 ### Prerequisites
 
-- Docker & Docker Compose
-- Node.js 18+ (for frontend development)
-- Python 3.11+ (for backend development)
-- PostgreSQL 15+ with pgvector extension
+- Docker Desktop ([download](https://docker.com/products/docker-desktop))
+- Ollama ([download](https://ollama.com/download))
+- Node.js 18+ ([download](https://nodejs.org))
+- Python 3.11+
 
-### Run with Docker Compose
+### Setup (5 minutes)
 
 ```bash
-# Clone the repository
-git clone https://github.com/YOUR_USERNAME/SentinelAI.git
+# 1. Clone
+git clone https://github.com/kirtan0515/SentinelAI.git
 cd SentinelAI
 
-# Copy environment files
-cp .env.example .env
+# 2. Start database + cache
+docker-compose up -d postgres redis
 
-# Start all services
-docker-compose up -d
+# 3. Pull free AI models (runs locally, no API key needed)
+ollama pull llama3
+ollama pull nomic-embed-text
 
-# Frontend: http://localhost:3000
-# Backend API: http://localhost:8000
-# API Docs: http://localhost:8000/docs
-# Grafana: http://localhost:3001
-# Prometheus: http://localhost:9090
+# 4. Start Ollama (keep this running)
+ollama serve
+
+# 5. Backend setup (new terminal)
+cd backend
+pip install -r requirements.txt
+cp ../.env.example .env
+alembic upgrade head
+uvicorn app.main:app --host 0.0.0.0 --port 8000 --reload
+
+# 6. Frontend setup (new terminal)
+cd frontend
+npm install
+npm run dev
 ```
+
+### Open
+
+- **Website:** http://localhost:3000
+- **API Docs:** http://localhost:8000/docs
+- Register an account, login, and start chatting
+
+### Cost
+
+| Component | Cost |
+|-----------|------|
+| SentinelAI | Free (MIT) |
+| PostgreSQL + Redis | Free (Docker) |
+| Ollama + Llama 3 | Free (local) |
+| RAG embeddings | Free (nomic-embed-text via Ollama) |
+| GPT-4, Claude (optional) | Paid API keys |
+
+Everything works without any API keys. Cloud AI models are optional.
 
 ### Development Setup
 
