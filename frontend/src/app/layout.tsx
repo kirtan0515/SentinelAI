@@ -5,9 +5,9 @@ import "@/styles/globals.css";
 const inter = Inter({ subsets: ["latin"] });
 
 export const metadata: Metadata = {
-  title: "SentinelAI - Enterprise AI Security Gateway",
+  title: "SentinelAI — Enterprise AI Security Gateway",
   description:
-    "Protect your LLM applications from prompt injection, jailbreak attacks, and data leakage.",
+    "Protect LLM applications from prompt injection, jailbreak attacks, and data leakage. Monitor, authenticate, and audit every AI interaction.",
 };
 
 export default function RootLayout({
@@ -16,8 +16,8 @@ export default function RootLayout({
   children: React.ReactNode;
 }) {
   return (
-    <html lang="en" className="dark">
-      <body className={inter.className}>{children}</body>
+    <html lang="en" className="dark" suppressHydrationWarning>
+      <body className={`${inter.className} antialiased`}>{children}</body>
     </html>
   );
 }

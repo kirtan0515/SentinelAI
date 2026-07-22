@@ -44,6 +44,7 @@ export const useAuthStore = create<AuthState>((set) => ({
   logout: () => {
     localStorage.removeItem("access_token");
     localStorage.removeItem("refresh_token");
+    localStorage.removeItem("demo_user");
     set({ user: null, isAuthenticated: false, isLoading: false });
     if (typeof window !== "undefined") {
       window.location.href = "/login";
@@ -57,9 +58,26 @@ export const useAuthStore = create<AuthState>((set) => ({
         set({ user: null, isAuthenticated: false, isLoading: false });
         return;
       }
+
+      // Check for demo mode first
+      const demoUser = localStorage.getItem("demo_user");
+      if (demoUser && token === "demo-token") {
+        const user = JSON.parse(demoUser) as User;
+        set({ user, isAuthenticated: true, isLoading: false });
+        return;
+      }
+
+      // Real API call
       const response = await api.get<User>("/auth/me");
       set({ user: response.data, isAuthenticated: true, isLoading: false });
     } catch {
+      // If API fails but we have demo user, use that
+      const demoUser = localStorage.getItem("demo_user");
+      if (demoUser) {
+        const user = JSON.parse(demoUser) as User;
+        set({ user, isAuthenticated: true, isLoading: false });
+        return;
+      }
       set({ user: null, isAuthenticated: false, isLoading: false });
     }
   },
