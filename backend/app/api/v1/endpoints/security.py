@@ -76,9 +76,7 @@ async def mask_sensitive_data(
     Returns the masked text and a summary of what was masked.
     """
     security_service = SecurityService()
-    masked_text, mask_counts = security_service.mask_sensitive_data_detailed(
-        payload.text
-    )
+    masked_text, mask_counts = security_service.mask_sensitive_data_detailed(payload.text)
 
     return {
         "original_length": len(payload.text),

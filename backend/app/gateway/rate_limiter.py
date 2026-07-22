@@ -97,9 +97,7 @@ class RateLimiter:
 
         # Check minute window
         minute_key = f"ratelimit:minute:{identifier}"
-        minute_result = await self._sliding_window_check(
-            redis, minute_key, per_minute, 60, now
-        )
+        minute_result = await self._sliding_window_check(redis, minute_key, per_minute, 60, now)
 
         if not minute_result[0]:
             return RateLimitResult(
@@ -112,9 +110,7 @@ class RateLimiter:
 
         # Check hour window
         hour_key = f"ratelimit:hour:{identifier}"
-        hour_result = await self._sliding_window_check(
-            redis, hour_key, per_hour, 3600, now
-        )
+        hour_result = await self._sliding_window_check(redis, hour_key, per_hour, 3600, now)
 
         if not hour_result[0]:
             return RateLimitResult(

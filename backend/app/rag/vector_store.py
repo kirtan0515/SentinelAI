@@ -184,16 +184,12 @@ class VectorStore:
 
     async def delete_document_chunks(self, document_id: UUID) -> int:
         """Delete all chunks for a document."""
-        stmt = delete(DocumentChunk).where(
-            DocumentChunk.document_id == document_id
-        )
+        stmt = delete(DocumentChunk).where(DocumentChunk.document_id == document_id)
         result = await self.db.execute(stmt)
         return result.rowcount
 
     async def get_chunk_count(self, document_id: UUID) -> int:
         """Get number of chunks for a document."""
-        stmt = select(DocumentChunk).where(
-            DocumentChunk.document_id == document_id
-        )
+        stmt = select(DocumentChunk).where(DocumentChunk.document_id == document_id)
         result = await self.db.execute(stmt)
         return len(result.scalars().all())

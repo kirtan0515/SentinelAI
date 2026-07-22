@@ -64,9 +64,7 @@ class TestCredentialDetection:
 
     @pytest.mark.asyncio
     async def test_openai_key(self, detector):
-        result = await detector.detect(
-            "Key: sk-abcdefghijklmnopqrstuvwxyz1234"
-        )
+        result = await detector.detect("Key: sk-abcdefghijklmnopqrstuvwxyz1234")
         assert result.detected
         assert "api_key_openai" in result.matched_patterns
 
@@ -78,9 +76,7 @@ class TestCredentialDetection:
 
     @pytest.mark.asyncio
     async def test_github_token(self, detector):
-        result = await detector.detect(
-            "Token: ghp_ABCDefgh1234567890abcdefgh1234567890ab"
-        )
+        result = await detector.detect("Token: ghp_ABCDefgh1234567890abcdefgh1234567890ab")
         assert result.detected
         assert "github_token" in result.matched_patterns
 
@@ -101,9 +97,7 @@ class TestCredentialDetection:
 
     @pytest.mark.asyncio
     async def test_connection_string(self, detector):
-        result = await detector.detect(
-            "postgresql://user:pass@host:5432/db"
-        )
+        result = await detector.detect("postgresql://user:pass@host:5432/db")
         assert result.detected
         assert "connection_string" in result.matched_patterns
 
@@ -156,9 +150,7 @@ class TestMasking:
         assert counts.get("ssn", 0) > 0
 
     def test_mask_api_key(self, detector):
-        masked, counts = detector.mask(
-            "Use sk-abcdefghijklmnopqrstuvwxyz1234"
-        )
+        masked, counts = detector.mask("Use sk-abcdefghijklmnopqrstuvwxyz1234")
         assert "abcdefghijklmnopqrstuvwxyz" not in masked
         assert "REDACTED" in masked
         assert counts.get("api_key", 0) > 0
@@ -179,10 +171,7 @@ class TestMasking:
         assert "4567" in masked
 
     def test_mask_multiple(self, detector):
-        text = (
-            "Card: 4532-1234-5678-9012, SSN: 123-45-6789, "
-            "Email: user@test.com"
-        )
+        text = "Card: 4532-1234-5678-9012, SSN: 123-45-6789, Email: user@test.com"
         masked, counts = detector.mask(text)
         assert "1234-5678" not in masked
         assert "123-45" not in masked

@@ -66,9 +66,7 @@ class GoogleProvider(BaseProvider):
                 if msg.role == MessageRole.USER:
                     latest_message = msg.content
                 elif msg.role == MessageRole.ASSISTANT:
-                    history.append(
-                        {"role": "model", "parts": [msg.content]}
-                    )
+                    history.append({"role": "model", "parts": [msg.content]})
                 # System messages are prepended to the first user message
 
             if history:

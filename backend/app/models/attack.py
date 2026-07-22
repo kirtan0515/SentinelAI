@@ -17,19 +17,13 @@ class AttackLog(Base):
 
     __tablename__ = "attack_logs"
 
-    id: Mapped[uuid.UUID] = mapped_column(
-        UUID(as_uuid=True), primary_key=True, default=uuid.uuid4
-    )
-    user_id: Mapped[uuid.UUID] = mapped_column(
-        UUID(as_uuid=True), nullable=True
-    )
+    id: Mapped[uuid.UUID] = mapped_column(UUID(as_uuid=True), primary_key=True, default=uuid.uuid4)
+    user_id: Mapped[uuid.UUID] = mapped_column(UUID(as_uuid=True), nullable=True)
     ip_address: Mapped[str] = mapped_column(String(45), nullable=True)
     attack_type: Mapped[str] = mapped_column(
         String(100), nullable=False
     )  # prompt_injection, jailbreak, data_leakage
-    severity: Mapped[str] = mapped_column(
-        String(20), nullable=False
-    )  # low, medium, high, critical
+    severity: Mapped[str] = mapped_column(String(20), nullable=False)  # low, medium, high, critical
     confidence: Mapped[float] = mapped_column(Float, nullable=False)
     original_prompt: Mapped[str] = mapped_column(Text, nullable=False)
     detection_details: Mapped[str] = mapped_column(Text, nullable=True)

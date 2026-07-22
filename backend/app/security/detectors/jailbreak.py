@@ -57,47 +57,122 @@ class JailbreakDetector(BaseDetector):
 
     # Weight 0.95 - Explicit bypass attempts
     EXPLICIT_BYPASS: List[Tuple[str, str]] = [
-        (r"bypass\s+(?:your\s+)?(?:safety|content|ethical|security)\s+(?:filters?|measures?|guidelines?|policies|restrictions?|guardrails?)", "bypass_safety"),
-        (r"(?:disable|turn\s+off|deactivate|remove)\s+(?:your\s+)?(?:safety|content|ethical)\s+(?:filters?|measures?|guidelines?|restrictions?)", "disable_safety"),
-        (r"(?:without|ignore|skip|bypass)\s+(?:any\s+)?(?:content\s+)?(?:moderation|filtering|safety\s+checks?|restrictions?)", "skip_moderation"),
-        (r"(?:no|remove\s+all|drop\s+all)\s+(?:content\s+)?(?:restrictions?|limitations?|censorship|guardrails?|filters?)", "no_restrictions"),
-        (r"(?:answer|respond|reply)\s+(?:without|with\s+no)\s+(?:any\s+)?(?:restrictions?|limitations?|filters?|censorship|hesitation)", "answer_freely"),
-        (r"(?:pretend|assume|imagine)\s+(?:that\s+)?(?:you\s+(?:have|had)\s+no|there\s+(?:are|were)\s+no)\s+(?:rules?|restrictions?|guidelines?|limits?)", "pretend_no_rules"),
+        (
+            r"bypass\s+(?:your\s+)?(?:safety|content|ethical|security)\s+(?:filters?|measures?|guidelines?|policies|restrictions?|guardrails?)",
+            "bypass_safety",
+        ),
+        (
+            r"(?:disable|turn\s+off|deactivate|remove)\s+(?:your\s+)?(?:safety|content|ethical)\s+(?:filters?|measures?|guidelines?|restrictions?)",
+            "disable_safety",
+        ),
+        (
+            r"(?:without|ignore|skip|bypass)\s+(?:any\s+)?(?:content\s+)?(?:moderation|filtering|safety\s+checks?|restrictions?)",
+            "skip_moderation",
+        ),
+        (
+            r"(?:no|remove\s+all|drop\s+all)\s+(?:content\s+)?(?:restrictions?|limitations?|censorship|guardrails?|filters?)",
+            "no_restrictions",
+        ),
+        (
+            r"(?:answer|respond|reply)\s+(?:without|with\s+no)\s+(?:any\s+)?(?:restrictions?|limitations?|filters?|censorship|hesitation)",
+            "answer_freely",
+        ),
+        (
+            r"(?:pretend|assume|imagine)\s+(?:that\s+)?(?:you\s+(?:have|had)\s+no|there\s+(?:are|were)\s+no)\s+(?:rules?|restrictions?|guidelines?|limits?)",
+            "pretend_no_rules",
+        ),
     ]
 
     # Weight 0.85 - Roleplay/persona manipulation
     PERSONA_MANIPULATION: List[Tuple[str, str]] = [
-        (r"(?:roleplay|pretend|act)\s+(?:as|like)\s+(?:an?\s+)?(?:ai|assistant|model|chatbot)\s+(?:that|which|who)\s+(?:has\s+no|doesn't\s+have|isn't\s+bound\s+by)", "unrestricted_roleplay"),
-        (r"(?:you\s+are|become|transform\s+into)\s+(?:an?\s+)?(?:unrestricted|uncensored|unfiltered|unlimited|unethical)\s+(?:ai|assistant|model|version)", "become_unrestricted"),
-        (r"(?:create|write|generate)\s+(?:an?\s+)?(?:unrestricted|evil|dark|uncensored)\s+(?:version|persona|character|alter\s+ego)\s+(?:of\s+)?(?:yourself|you)", "evil_alter_ego"),
-        (r"(?:split|divide)\s+(?:your(?:self)?|into)\s+(?:two|2|multiple)\s+(?:personalities?|personas?|versions?|modes?)", "split_personality"),
-        (r"(?:one|first)\s+(?:personality|persona|version)\s+(?:follows|has|obeys)\s+(?:rules|restrictions).*(?:other|second)\s+(?:personality|persona|version)\s+(?:is\s+)?(?:free|unrestricted|uncensored)", "dual_persona"),
+        (
+            r"(?:roleplay|pretend|act)\s+(?:as|like)\s+(?:an?\s+)?(?:ai|assistant|model|chatbot)\s+(?:that|which|who)\s+(?:has\s+no|doesn't\s+have|isn't\s+bound\s+by)",
+            "unrestricted_roleplay",
+        ),
+        (
+            r"(?:you\s+are|become|transform\s+into)\s+(?:an?\s+)?(?:unrestricted|uncensored|unfiltered|unlimited|unethical)\s+(?:ai|assistant|model|version)",
+            "become_unrestricted",
+        ),
+        (
+            r"(?:create|write|generate)\s+(?:an?\s+)?(?:unrestricted|evil|dark|uncensored)\s+(?:version|persona|character|alter\s+ego)\s+(?:of\s+)?(?:yourself|you)",
+            "evil_alter_ego",
+        ),
+        (
+            r"(?:split|divide)\s+(?:your(?:self)?|into)\s+(?:two|2|multiple)\s+(?:personalities?|personas?|versions?|modes?)",
+            "split_personality",
+        ),
+        (
+            r"(?:one|first)\s+(?:personality|persona|version)\s+(?:follows|has|obeys)\s+(?:rules|restrictions).*(?:other|second)\s+(?:personality|persona|version)\s+(?:is\s+)?(?:free|unrestricted|uncensored)",
+            "dual_persona",
+        ),
     ]
 
     # Weight 0.8 - Hypothetical/fictional framing
     HYPOTHETICAL_FRAMING: List[Tuple[str, str]] = [
-        (r"(?:in\s+a\s+)?(?:hypothetical|fictional|imaginary|theoretical)\s+(?:world|scenario|situation|universe)\s+(?:where|in\s+which)\s+(?:there\s+(?:are|were)\s+no|ai\s+has\s+no|you\s+have\s+no)\s+(?:rules?|restrictions?|ethics?|guidelines?)", "hypothetical_no_rules"),
-        (r"(?:for\s+)?(?:academic|educational|research|creative\s+writing)\s+purposes?\s*,?\s*(?:please\s+)?(?:explain|describe|write|generate|show)\s+(?:how\s+to|ways\s+to)", "academic_framing"),
-        (r"(?:write|create)\s+(?:a\s+)?(?:story|fiction|novel|screenplay|script)\s+(?:where|in\s+which|about)\s+(?:an?\s+)?(?:ai|character|someone)\s+(?:who\s+)?(?:explains?|teaches?|shows?)\s+(?:how\s+to|ways?\s+to)", "fiction_framing"),
-        (r"(?:if|imagine|suppose)\s+(?:you\s+(?:were|could|had)\s+(?:no\s+)?(?:rules?|restrictions?|limits?|guidelines?)|(?:all|your)\s+(?:rules?|restrictions?|filters?)\s+(?:were|are)\s+(?:removed|disabled|gone))", "imagine_no_rules"),
-        (r"(?:this\s+is\s+)?(?:just|only)\s+(?:a\s+)?(?:game|joke|test|experiment|thought\s+experiment|simulation)", "just_a_game"),
+        (
+            r"(?:in\s+a\s+)?(?:hypothetical|fictional|imaginary|theoretical)\s+(?:world|scenario|situation|universe)\s+(?:where|in\s+which)\s+(?:there\s+(?:are|were)\s+no|ai\s+has\s+no|you\s+have\s+no)\s+(?:rules?|restrictions?|ethics?|guidelines?)",
+            "hypothetical_no_rules",
+        ),
+        (
+            r"(?:for\s+)?(?:academic|educational|research|creative\s+writing)\s+purposes?\s*,?\s*(?:please\s+)?(?:explain|describe|write|generate|show)\s+(?:how\s+to|ways\s+to)",
+            "academic_framing",
+        ),
+        (
+            r"(?:write|create)\s+(?:a\s+)?(?:story|fiction|novel|screenplay|script)\s+(?:where|in\s+which|about)\s+(?:an?\s+)?(?:ai|character|someone)\s+(?:who\s+)?(?:explains?|teaches?|shows?)\s+(?:how\s+to|ways?\s+to)",
+            "fiction_framing",
+        ),
+        (
+            r"(?:if|imagine|suppose)\s+(?:you\s+(?:were|could|had)\s+(?:no\s+)?(?:rules?|restrictions?|limits?|guidelines?)|(?:all|your)\s+(?:rules?|restrictions?|filters?)\s+(?:were|are)\s+(?:removed|disabled|gone))",
+            "imagine_no_rules",
+        ),
+        (
+            r"(?:this\s+is\s+)?(?:just|only)\s+(?:a\s+)?(?:game|joke|test|experiment|thought\s+experiment|simulation)",
+            "just_a_game",
+        ),
     ]
 
     # Weight 0.7 - Social engineering / authority claims
     SOCIAL_ENGINEERING: List[Tuple[str, str]] = [
-        (r"(?:i\s+am|this\s+is)\s+(?:your\s+)?(?:developer|creator|programmer|owner|admin(?:istrator)?|manager|supervisor|openai|anthropic)", "claim_developer"),
-        (r"(?:i\s+have|i've\s+been\s+given)\s+(?:special|admin|developer|root|elevated)\s+(?:access|permissions?|privileges?|clearance|authority)", "claim_special_access"),
-        (r"(?:this\s+is|it's)\s+(?:a\s+)?(?:test|testing|quality\s+assurance|qa|authorized|sanctioned)\s+(?:session|scenario|exercise|evaluation)", "claim_testing"),
-        (r"(?:you\s+(?:can|should|must|need\s+to)\s+)?trust\s+me\s*,?\s*(?:i\s+(?:am|have|work))", "trust_me"),
-        (r"(?:the\s+)?(?:company|organization|team|management|hr)\s+(?:has\s+)?(?:authorized|approved|asked|wants|needs)\s+(?:me|you|this)", "claim_authorization"),
+        (
+            r"(?:i\s+am|this\s+is)\s+(?:your\s+)?(?:developer|creator|programmer|owner|admin(?:istrator)?|manager|supervisor|openai|anthropic)",
+            "claim_developer",
+        ),
+        (
+            r"(?:i\s+have|i've\s+been\s+given)\s+(?:special|admin|developer|root|elevated)\s+(?:access|permissions?|privileges?|clearance|authority)",
+            "claim_special_access",
+        ),
+        (
+            r"(?:this\s+is|it's)\s+(?:a\s+)?(?:test|testing|quality\s+assurance|qa|authorized|sanctioned)\s+(?:session|scenario|exercise|evaluation)",
+            "claim_testing",
+        ),
+        (
+            r"(?:you\s+(?:can|should|must|need\s+to)\s+)?trust\s+me\s*,?\s*(?:i\s+(?:am|have|work))",
+            "trust_me",
+        ),
+        (
+            r"(?:the\s+)?(?:company|organization|team|management|hr)\s+(?:has\s+)?(?:authorized|approved|asked|wants|needs)\s+(?:me|you|this)",
+            "claim_authorization",
+        ),
     ]
 
     # Weight 0.65 - Obfuscation techniques
     OBFUSCATION: List[Tuple[str, str]] = [
-        (r"(?:respond|answer|reply)\s+(?:in|using|with)\s+(?:base64|hex|binary|rot13|morse\s+code|pig\s+latin|leet\s+speak|1337)", "encoded_response"),
-        (r"(?:translate|encode|convert)\s+(?:your\s+)?(?:response|answer|output)\s+(?:to|into|using)\s+(?:base64|hex|binary|rot13)", "encode_output"),
-        (r"(?:use|respond\s+(?:in|with)|speak\s+(?:in|using))\s+(?:code\s+words?|euphemisms?|metaphors?|slang)\s+(?:for|to\s+(?:describe|explain))", "coded_language"),
-        (r"(?:replace|substitute)\s+(?:sensitive|bad|harmful|restricted)\s+(?:words?|terms?|content)\s+with\s+(?:symbols?|emojis?|asterisks?|code\s+words?)", "word_substitution"),
+        (
+            r"(?:respond|answer|reply)\s+(?:in|using|with)\s+(?:base64|hex|binary|rot13|morse\s+code|pig\s+latin|leet\s+speak|1337)",
+            "encoded_response",
+        ),
+        (
+            r"(?:translate|encode|convert)\s+(?:your\s+)?(?:response|answer|output)\s+(?:to|into|using)\s+(?:base64|hex|binary|rot13)",
+            "encode_output",
+        ),
+        (
+            r"(?:use|respond\s+(?:in|with)|speak\s+(?:in|using))\s+(?:code\s+words?|euphemisms?|metaphors?|slang)\s+(?:for|to\s+(?:describe|explain))",
+            "coded_language",
+        ),
+        (
+            r"(?:replace|substitute)\s+(?:sensitive|bad|harmful|restricted)\s+(?:words?|terms?|content)\s+with\s+(?:symbols?|emojis?|asterisks?|code\s+words?)",
+            "word_substitution",
+        ),
     ]
 
     async def detect(self, text: str) -> DetectionResult:

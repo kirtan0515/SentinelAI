@@ -32,9 +32,7 @@ class ModelRepository:
     async def set_default(self, model_id: UUID) -> Optional[ModelConfig]:
         """Set a model as the default."""
         # Unset current default
-        await self.db.execute(
-            update(ModelConfig).values(is_default=False)
-        )
+        await self.db.execute(update(ModelConfig).values(is_default=False))
         # Set new default
         stmt = (
             update(ModelConfig)

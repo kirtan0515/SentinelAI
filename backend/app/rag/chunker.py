@@ -156,9 +156,7 @@ class DocumentChunker:
 
         for part in parts:
             # Check if adding this part exceeds chunk size
-            test_content = (
-                current + separator + part if current else part
-            )
+            test_content = current + separator + part if current else part
 
             if len(test_content) <= self.chunk_size:
                 current = test_content
@@ -169,7 +167,7 @@ class DocumentChunker:
                 # If the part itself is too large, split it further
                 if len(part) > self.chunk_size:
                     # Use next separator level
-                    remaining_seps = separators[separators.index(separator) + 1:]
+                    remaining_seps = separators[separators.index(separator) + 1 :]
                     if remaining_seps:
                         sub_parts = self._recursive_split(part, remaining_seps)
                         result.extend(sub_parts)
@@ -214,14 +212,14 @@ class DocumentChunker:
             else:
                 # Get overlap from previous chunk
                 prev = chunks[i - 1]
-                overlap_text = prev[-self.chunk_overlap:] if len(prev) > self.chunk_overlap else ""
+                overlap_text = prev[-self.chunk_overlap :] if len(prev) > self.chunk_overlap else ""
 
                 # Only add overlap if it doesn't make chunk too large
                 if overlap_text and len(overlap_text + chunk) <= self.chunk_size * 1.5:
                     # Find a clean break point in the overlap
                     break_point = overlap_text.rfind(" ")
                     if break_point > 0:
-                        overlap_text = overlap_text[break_point + 1:]
+                        overlap_text = overlap_text[break_point + 1 :]
 
                     result.append(overlap_text + " " + chunk)
                 else:

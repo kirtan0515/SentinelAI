@@ -104,9 +104,7 @@ class ChatService:
         response_content = llm_response["content"]
 
         # === Output Guardrails ===
-        output_result = await self.guardrails.check_output(
-            message_for_llm, response_content
-        )
+        output_result = await self.guardrails.check_output(message_for_llm, response_content)
         if output_result.modified_text:
             response_content = output_result.modified_text
 
@@ -184,9 +182,7 @@ class ChatService:
         # TODO: Implement with repository
         return []
 
-    async def get_session(
-        self, session_id: UUID, user_id: UUID
-    ) -> Optional[ChatSessionResponse]:
+    async def get_session(self, session_id: UUID, user_id: UUID) -> Optional[ChatSessionResponse]:
         """Get a specific session."""
         # TODO: Implement with repository
         return None

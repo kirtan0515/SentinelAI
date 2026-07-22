@@ -73,31 +73,18 @@ class UserRepository:
 
     async def update(self, user_id: UUID, **kwargs) -> Optional[User]:
         """Update user fields."""
-        stmt = (
-            update(User)
-            .where(User.id == user_id)
-            .values(**kwargs)
-            .returning(User)
-        )
+        stmt = update(User).where(User.id == user_id).values(**kwargs).returning(User)
         result = await self.db.execute(stmt)
         return result.scalar_one_or_none()
 
     async def update_last_login(self, user_id: UUID) -> None:
         """Update user's last login timestamp."""
-        stmt = (
-            update(User)
-            .where(User.id == user_id)
-            .values(last_login=datetime.now(timezone.utc))
-        )
+        stmt = update(User).where(User.id == user_id).values(last_login=datetime.now(timezone.utc))
         await self.db.execute(stmt)
 
     async def update_password(self, user_id: UUID, hashed_password: str) -> None:
         """Update user password."""
-        stmt = (
-            update(User)
-            .where(User.id == user_id)
-            .values(hashed_password=hashed_password)
-        )
+        stmt = update(User).where(User.id == user_id).values(hashed_password=hashed_password)
         await self.db.execute(stmt)
 
     async def update_role(self, user_id: UUID, role: str) -> Optional[User]:

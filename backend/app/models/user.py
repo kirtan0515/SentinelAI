@@ -17,9 +17,7 @@ class Role(Base):
 
     __tablename__ = "roles"
 
-    id: Mapped[uuid.UUID] = mapped_column(
-        UUID(as_uuid=True), primary_key=True, default=uuid.uuid4
-    )
+    id: Mapped[uuid.UUID] = mapped_column(UUID(as_uuid=True), primary_key=True, default=uuid.uuid4)
     name: Mapped[str] = mapped_column(String(50), unique=True, nullable=False)
     description: Mapped[str] = mapped_column(Text, nullable=True)
     permissions: Mapped[str] = mapped_column(Text, nullable=True)  # JSON string
@@ -36,20 +34,12 @@ class User(Base):
 
     __tablename__ = "users"
 
-    id: Mapped[uuid.UUID] = mapped_column(
-        UUID(as_uuid=True), primary_key=True, default=uuid.uuid4
-    )
-    email: Mapped[str] = mapped_column(
-        String(255), unique=True, index=True, nullable=False
-    )
-    username: Mapped[str] = mapped_column(
-        String(100), unique=True, index=True, nullable=False
-    )
+    id: Mapped[uuid.UUID] = mapped_column(UUID(as_uuid=True), primary_key=True, default=uuid.uuid4)
+    email: Mapped[str] = mapped_column(String(255), unique=True, index=True, nullable=False)
+    username: Mapped[str] = mapped_column(String(100), unique=True, index=True, nullable=False)
     hashed_password: Mapped[str] = mapped_column(String(255), nullable=False)
     full_name: Mapped[str] = mapped_column(String(255), nullable=True)
-    role: Mapped[str] = mapped_column(
-        String(50), default="user", nullable=False
-    )
+    role: Mapped[str] = mapped_column(String(50), default="user", nullable=False)
     role_id: Mapped[uuid.UUID] = mapped_column(
         UUID(as_uuid=True), ForeignKey("roles.id"), nullable=True
     )
@@ -57,12 +47,8 @@ class User(Base):
     is_verified: Mapped[bool] = mapped_column(Boolean, default=False)
     mfa_enabled: Mapped[bool] = mapped_column(Boolean, default=False)
     mfa_secret: Mapped[str] = mapped_column(String(255), nullable=True)
-    cognito_sub: Mapped[str] = mapped_column(
-        String(255), unique=True, nullable=True
-    )
-    last_login: Mapped[datetime] = mapped_column(
-        DateTime(timezone=True), nullable=True
-    )
+    cognito_sub: Mapped[str] = mapped_column(String(255), unique=True, nullable=True)
+    last_login: Mapped[datetime] = mapped_column(DateTime(timezone=True), nullable=True)
     created_at: Mapped[datetime] = mapped_column(
         DateTime(timezone=True), default=lambda: datetime.now(timezone.utc)
     )
@@ -74,9 +60,5 @@ class User(Base):
 
     # Relationships
     role_obj: Mapped["Role"] = relationship("Role", back_populates="users")
-    chat_sessions: Mapped[list["ChatSession"]] = relationship(
-        "ChatSession", back_populates="user"
-    )
-    documents: Mapped[list["Document"]] = relationship(
-        "Document", back_populates="user"
-    )
+    chat_sessions: Mapped[list["ChatSession"]] = relationship("ChatSession", back_populates="user")
+    documents: Mapped[list["Document"]] = relationship("Document", back_populates="user")

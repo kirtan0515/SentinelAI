@@ -83,19 +83,13 @@ class AuditRepository:
         blocked_requests = await self.db.scalar(
             select(func.count(AuditLog.id)).where(AuditLog.blocked == True)
         )
-        attacks_detected = await self.db.scalar(
-            select(func.count(AttackLog.id))
-        )
+        attacks_detected = await self.db.scalar(select(func.count(AttackLog.id)))
 
         return {
             "total_requests": total_requests or 0,
             "blocked_requests": blocked_requests or 0,
             "attacks_detected": attacks_detected or 0,
-            "block_rate": (
-                (blocked_requests / total_requests * 100)
-                if total_requests
-                else 0
-            ),
+            "block_rate": ((blocked_requests / total_requests * 100) if total_requests else 0),
         }
 
     async def get_user_stats(self, user_id: UUID) -> dict:

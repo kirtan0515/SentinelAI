@@ -169,18 +169,14 @@ class DocumentService:
     async def get_user_documents(self, user_id: UUID) -> List[DocumentUploadResponse]:
         """Get all documents for a user."""
         stmt = (
-            select(Document)
-            .where(Document.user_id == user_id)
-            .order_by(Document.created_at.desc())
+            select(Document).where(Document.user_id == user_id).order_by(Document.created_at.desc())
         )
         result = await self.db.execute(stmt)
         documents = result.scalars().all()
 
         return [self._build_response(doc) for doc in documents]
 
-    async def get_document(
-        self, document_id: UUID, user_id: UUID
-    ) -> Optional[Document]:
+    async def get_document(self, document_id: UUID, user_id: UUID) -> Optional[Document]:
         """Get a specific document (access controlled)."""
         stmt = select(Document).where(
             Document.id == document_id,
@@ -240,9 +236,7 @@ class DocumentService:
         """
         # Validate document ownership if specific IDs provided
         if document_ids:
-            valid_ids = await self._validate_document_access(
-                document_ids, user.id
-            )
+            valid_ids = await self._validate_document_access(document_ids, user.id)
             if not valid_ids:
                 return RAGQueryResponse(
                     answer="None of the specified documents were found "
@@ -284,22 +278,12 @@ class DocumentService:
 
     async def _update_status(self, document_id: UUID, status: str) -> None:
         """Update document status."""
-        stmt = (
-            update(Document)
-            .where(Document.id == document_id)
-            .values(status=status)
-        )
+        stmt = update(Document).where(Document.id == document_id).values(status=status)
         await self.db.execute(stmt)
 
-    async def _update_document(
-        self, document_id: UUID, **kwargs
-    ) -> None:
+    async def _update_document(self, document_id: UUID, **kwargs) -> None:
         """Update document fields."""
-        stmt = (
-            update(Document)
-            .where(Document.id == document_id)
-            .values(**kwargs)
-        )
+        stmt = update(Document).where(Document.id == document_id).values(**kwargs)
         await self.db.execute(stmt)
 
     def _build_response(self, document: Document) -> DocumentUploadResponse:

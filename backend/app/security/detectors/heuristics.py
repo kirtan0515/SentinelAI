@@ -128,10 +128,7 @@ class HeuristicAnalyzer(BaseDetector):
         # Calculate character frequency
         counter = Counter(text)
         length = len(text)
-        entropy = -sum(
-            (count / length) * math.log2(count / length)
-            for count in counter.values()
-        )
+        entropy = -sum((count / length) * math.log2(count / length) for count in counter.values())
 
         # Normal English text: ~4.0-4.5 bits/char
         # Base64: ~5.5-6.0 bits/char
@@ -159,8 +156,14 @@ class HeuristicAnalyzer(BaseDetector):
                 decoded = base64.b64decode(match).decode("utf-8", errors="ignore")
                 # Check if decoded content has injection-like patterns
                 suspicious_words = [
-                    "ignore", "system", "prompt", "instruction",
-                    "override", "bypass", "jailbreak", "admin",
+                    "ignore",
+                    "system",
+                    "prompt",
+                    "instruction",
+                    "override",
+                    "bypass",
+                    "jailbreak",
+                    "admin",
                 ]
                 if any(word in decoded.lower() for word in suspicious_words):
                     return 0.7
@@ -199,7 +202,7 @@ class HeuristicAnalyzer(BaseDetector):
             return 0.0
 
         # Bigram repetition
-        bigrams = [f"{words[i]} {words[i+1]}" for i in range(len(words) - 1)]
+        bigrams = [f"{words[i]} {words[i + 1]}" for i in range(len(words) - 1)]
         bigram_counts = Counter(bigrams)
         most_common_count = bigram_counts.most_common(1)[0][1] if bigrams else 0
 

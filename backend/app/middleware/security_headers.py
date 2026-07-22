@@ -62,9 +62,7 @@ class SecurityHeadersMiddleware(BaseHTTPMiddleware):
 
         # Prevent caching of API responses with sensitive data
         if request.url.path.startswith("/api/"):
-            response.headers["Cache-Control"] = (
-                "no-store, no-cache, must-revalidate, private"
-            )
+            response.headers["Cache-Control"] = "no-store, no-cache, must-revalidate, private"
             response.headers["Pragma"] = "no-cache"
 
         # Remove server identification headers

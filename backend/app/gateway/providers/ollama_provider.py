@@ -44,10 +44,7 @@ class OllamaProvider(BaseProvider):
 
         try:
             # Format messages for Ollama chat API
-            ollama_messages = [
-                {"role": msg.role.value, "content": msg.content}
-                for msg in messages
-            ]
+            ollama_messages = [{"role": msg.role.value, "content": msg.content} for msg in messages]
 
             async with httpx.AsyncClient() as client:
                 response = await client.post(

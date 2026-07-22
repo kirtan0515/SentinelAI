@@ -47,10 +47,7 @@ class OpenAIProvider(BaseProvider):
             client = self._get_client()
 
             # Convert to OpenAI message format
-            openai_messages = [
-                {"role": msg.role.value, "content": msg.content}
-                for msg in messages
-            ]
+            openai_messages = [{"role": msg.role.value, "content": msg.content} for msg in messages]
 
             response = await client.chat.completions.create(
                 model=model,

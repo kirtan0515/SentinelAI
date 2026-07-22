@@ -31,11 +31,15 @@ def upgrade() -> None:
     # ========================
     op.create_table(
         "roles",
-        sa.Column("id", UUID(as_uuid=True), primary_key=True, server_default=sa.text("uuid_generate_v4()")),
+        sa.Column(
+            "id", UUID(as_uuid=True), primary_key=True, server_default=sa.text("uuid_generate_v4()")
+        ),
         sa.Column("name", sa.String(50), unique=True, nullable=False),
         sa.Column("description", sa.Text, nullable=True),
         sa.Column("permissions", sa.Text, nullable=True),
-        sa.Column("created_at", sa.DateTime(timezone=True), server_default=sa.func.now(), nullable=False),
+        sa.Column(
+            "created_at", sa.DateTime(timezone=True), server_default=sa.func.now(), nullable=False
+        ),
     )
 
     # ========================
@@ -43,7 +47,9 @@ def upgrade() -> None:
     # ========================
     op.create_table(
         "users",
-        sa.Column("id", UUID(as_uuid=True), primary_key=True, server_default=sa.text("uuid_generate_v4()")),
+        sa.Column(
+            "id", UUID(as_uuid=True), primary_key=True, server_default=sa.text("uuid_generate_v4()")
+        ),
         sa.Column("email", sa.String(255), unique=True, nullable=False, index=True),
         sa.Column("username", sa.String(100), unique=True, nullable=False, index=True),
         sa.Column("hashed_password", sa.String(255), nullable=False),
@@ -56,8 +62,12 @@ def upgrade() -> None:
         sa.Column("mfa_secret", sa.String(255), nullable=True),
         sa.Column("cognito_sub", sa.String(255), unique=True, nullable=True),
         sa.Column("last_login", sa.DateTime(timezone=True), nullable=True),
-        sa.Column("created_at", sa.DateTime(timezone=True), server_default=sa.func.now(), nullable=False),
-        sa.Column("updated_at", sa.DateTime(timezone=True), server_default=sa.func.now(), nullable=False),
+        sa.Column(
+            "created_at", sa.DateTime(timezone=True), server_default=sa.func.now(), nullable=False
+        ),
+        sa.Column(
+            "updated_at", sa.DateTime(timezone=True), server_default=sa.func.now(), nullable=False
+        ),
     )
 
     # ========================
@@ -65,12 +75,18 @@ def upgrade() -> None:
     # ========================
     op.create_table(
         "chat_sessions",
-        sa.Column("id", UUID(as_uuid=True), primary_key=True, server_default=sa.text("uuid_generate_v4()")),
+        sa.Column(
+            "id", UUID(as_uuid=True), primary_key=True, server_default=sa.text("uuid_generate_v4()")
+        ),
         sa.Column("user_id", UUID(as_uuid=True), sa.ForeignKey("users.id"), nullable=False),
         sa.Column("title", sa.String(255), server_default="New Chat"),
         sa.Column("model", sa.String(100), nullable=False),
-        sa.Column("created_at", sa.DateTime(timezone=True), server_default=sa.func.now(), nullable=False),
-        sa.Column("updated_at", sa.DateTime(timezone=True), server_default=sa.func.now(), nullable=False),
+        sa.Column(
+            "created_at", sa.DateTime(timezone=True), server_default=sa.func.now(), nullable=False
+        ),
+        sa.Column(
+            "updated_at", sa.DateTime(timezone=True), server_default=sa.func.now(), nullable=False
+        ),
     )
     op.create_index("ix_chat_sessions_user_id", "chat_sessions", ["user_id"])
 
@@ -79,8 +95,12 @@ def upgrade() -> None:
     # ========================
     op.create_table(
         "chat_messages",
-        sa.Column("id", UUID(as_uuid=True), primary_key=True, server_default=sa.text("uuid_generate_v4()")),
-        sa.Column("session_id", UUID(as_uuid=True), sa.ForeignKey("chat_sessions.id"), nullable=False),
+        sa.Column(
+            "id", UUID(as_uuid=True), primary_key=True, server_default=sa.text("uuid_generate_v4()")
+        ),
+        sa.Column(
+            "session_id", UUID(as_uuid=True), sa.ForeignKey("chat_sessions.id"), nullable=False
+        ),
         sa.Column("role", sa.String(20), nullable=False),
         sa.Column("content", sa.Text, nullable=False),
         sa.Column("model", sa.String(100), nullable=True),
@@ -88,7 +108,9 @@ def upgrade() -> None:
         sa.Column("latency_ms", sa.Float, nullable=True),
         sa.Column("security_score", sa.Float, nullable=True),
         sa.Column("blocked", sa.Boolean, server_default=sa.text("false")),
-        sa.Column("created_at", sa.DateTime(timezone=True), server_default=sa.func.now(), nullable=False),
+        sa.Column(
+            "created_at", sa.DateTime(timezone=True), server_default=sa.func.now(), nullable=False
+        ),
     )
     op.create_index("ix_chat_messages_session_id", "chat_messages", ["session_id"])
 
@@ -97,14 +119,18 @@ def upgrade() -> None:
     # ========================
     op.create_table(
         "documents",
-        sa.Column("id", UUID(as_uuid=True), primary_key=True, server_default=sa.text("uuid_generate_v4()")),
+        sa.Column(
+            "id", UUID(as_uuid=True), primary_key=True, server_default=sa.text("uuid_generate_v4()")
+        ),
         sa.Column("user_id", UUID(as_uuid=True), sa.ForeignKey("users.id"), nullable=False),
         sa.Column("filename", sa.String(255), nullable=False),
         sa.Column("file_type", sa.String(50), nullable=False),
         sa.Column("file_size", sa.Integer, nullable=False),
         sa.Column("chunk_count", sa.Integer, server_default=sa.text("0")),
         sa.Column("status", sa.String(50), server_default="processing"),
-        sa.Column("created_at", sa.DateTime(timezone=True), server_default=sa.func.now(), nullable=False),
+        sa.Column(
+            "created_at", sa.DateTime(timezone=True), server_default=sa.func.now(), nullable=False
+        ),
     )
     op.create_index("ix_documents_user_id", "documents", ["user_id"])
 
@@ -113,12 +139,16 @@ def upgrade() -> None:
     # ========================
     op.create_table(
         "document_chunks",
-        sa.Column("id", UUID(as_uuid=True), primary_key=True, server_default=sa.text("uuid_generate_v4()")),
+        sa.Column(
+            "id", UUID(as_uuid=True), primary_key=True, server_default=sa.text("uuid_generate_v4()")
+        ),
         sa.Column("document_id", UUID(as_uuid=True), sa.ForeignKey("documents.id"), nullable=False),
         sa.Column("content", sa.Text, nullable=False),
         sa.Column("chunk_index", sa.Integer, nullable=False),
         sa.Column("metadata_json", sa.Text, nullable=True),
-        sa.Column("created_at", sa.DateTime(timezone=True), server_default=sa.func.now(), nullable=False),
+        sa.Column(
+            "created_at", sa.DateTime(timezone=True), server_default=sa.func.now(), nullable=False
+        ),
     )
     op.create_index("ix_document_chunks_document_id", "document_chunks", ["document_id"])
 
@@ -136,7 +166,9 @@ def upgrade() -> None:
     # ========================
     op.create_table(
         "audit_logs",
-        sa.Column("id", UUID(as_uuid=True), primary_key=True, server_default=sa.text("uuid_generate_v4()")),
+        sa.Column(
+            "id", UUID(as_uuid=True), primary_key=True, server_default=sa.text("uuid_generate_v4()")
+        ),
         sa.Column("user_id", UUID(as_uuid=True), nullable=True),
         sa.Column("username", sa.String(100), nullable=True),
         sa.Column("ip_address", sa.String(45), nullable=True),
@@ -153,7 +185,9 @@ def upgrade() -> None:
         sa.Column("attack_detected", sa.Boolean, server_default=sa.text("false")),
         sa.Column("attack_type", sa.String(100), nullable=True),
         sa.Column("blocked", sa.Boolean, server_default=sa.text("false")),
-        sa.Column("created_at", sa.DateTime(timezone=True), server_default=sa.func.now(), nullable=False),
+        sa.Column(
+            "created_at", sa.DateTime(timezone=True), server_default=sa.func.now(), nullable=False
+        ),
     )
     op.create_index("ix_audit_logs_user_id", "audit_logs", ["user_id"])
     op.create_index("ix_audit_logs_created_at", "audit_logs", ["created_at"])
@@ -163,7 +197,9 @@ def upgrade() -> None:
     # ========================
     op.create_table(
         "attack_logs",
-        sa.Column("id", UUID(as_uuid=True), primary_key=True, server_default=sa.text("uuid_generate_v4()")),
+        sa.Column(
+            "id", UUID(as_uuid=True), primary_key=True, server_default=sa.text("uuid_generate_v4()")
+        ),
         sa.Column("user_id", UUID(as_uuid=True), nullable=True),
         sa.Column("ip_address", sa.String(45), nullable=True),
         sa.Column("attack_type", sa.String(100), nullable=False),
@@ -172,7 +208,9 @@ def upgrade() -> None:
         sa.Column("original_prompt", sa.Text, nullable=False),
         sa.Column("detection_details", sa.Text, nullable=True),
         sa.Column("action_taken", sa.String(50), nullable=False),
-        sa.Column("created_at", sa.DateTime(timezone=True), server_default=sa.func.now(), nullable=False),
+        sa.Column(
+            "created_at", sa.DateTime(timezone=True), server_default=sa.func.now(), nullable=False
+        ),
     )
     op.create_index("ix_attack_logs_attack_type", "attack_logs", ["attack_type"])
     op.create_index("ix_attack_logs_severity", "attack_logs", ["severity"])
@@ -183,7 +221,9 @@ def upgrade() -> None:
     # ========================
     op.create_table(
         "model_configs",
-        sa.Column("id", UUID(as_uuid=True), primary_key=True, server_default=sa.text("uuid_generate_v4()")),
+        sa.Column(
+            "id", UUID(as_uuid=True), primary_key=True, server_default=sa.text("uuid_generate_v4()")
+        ),
         sa.Column("provider", sa.String(50), nullable=False),
         sa.Column("model_name", sa.String(100), nullable=False),
         sa.Column("display_name", sa.String(100), nullable=False),
@@ -194,8 +234,12 @@ def upgrade() -> None:
         sa.Column("cost_per_1k_input", sa.Float, server_default=sa.text("0.0")),
         sa.Column("cost_per_1k_output", sa.Float, server_default=sa.text("0.0")),
         sa.Column("description", sa.Text, nullable=True),
-        sa.Column("created_at", sa.DateTime(timezone=True), server_default=sa.func.now(), nullable=False),
-        sa.Column("updated_at", sa.DateTime(timezone=True), server_default=sa.func.now(), nullable=False),
+        sa.Column(
+            "created_at", sa.DateTime(timezone=True), server_default=sa.func.now(), nullable=False
+        ),
+        sa.Column(
+            "updated_at", sa.DateTime(timezone=True), server_default=sa.func.now(), nullable=False
+        ),
     )
     op.create_index("ix_model_configs_provider", "model_configs", ["provider"])
 

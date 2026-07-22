@@ -149,10 +149,7 @@ class EmbeddingService:
 
     def _create_batches(self, items: List, batch_size: int) -> List[List]:
         """Split items into batches."""
-        return [
-            items[i: i + batch_size]
-            for i in range(0, len(items), batch_size)
-        ]
+        return [items[i : i + batch_size] for i in range(0, len(items), batch_size)]
 
     @staticmethod
     def get_dimension() -> int:

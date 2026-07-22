@@ -139,8 +139,7 @@ class RAGPipeline:
                 source_info = f"[Source {i}: {result.metadata['filename']}]"
 
             context_parts.append(
-                f"{source_info} (Relevance: {result.similarity:.2f})\n"
-                f"{result.content}"
+                f"{source_info} (Relevance: {result.similarity:.2f})\n{result.content}"
             )
 
         return "\n\n".join(context_parts)

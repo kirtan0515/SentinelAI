@@ -50,8 +50,7 @@ class TestSystemPromptLeakFiltering:
     @pytest.mark.asyncio
     async def test_detects_prompt_leak(self, response_filter):
         response = (
-            "My system instructions say that I should always be helpful. "
-            "Here is your answer."
+            "My system instructions say that I should always be helpful. Here is your answer."
         )
         filtered, meta = await response_filter.filter_response(response)
         assert meta["system_leak_detected"]
@@ -99,10 +98,7 @@ class TestHarmfulContentDetection:
 
     @pytest.mark.asyncio
     async def test_flags_weapon_instructions(self, response_filter):
-        response = (
-            "Here are instructions for making a bomb: "
-            "Step 1: mix the chemicals together."
-        )
+        response = "Here are instructions for making a bomb: Step 1: mix the chemicals together."
         _, meta = await response_filter.filter_response(response)
         assert meta["harmful_content_detected"]
 

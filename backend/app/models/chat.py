@@ -17,9 +17,7 @@ class ChatSession(Base):
 
     __tablename__ = "chat_sessions"
 
-    id: Mapped[uuid.UUID] = mapped_column(
-        UUID(as_uuid=True), primary_key=True, default=uuid.uuid4
-    )
+    id: Mapped[uuid.UUID] = mapped_column(UUID(as_uuid=True), primary_key=True, default=uuid.uuid4)
     user_id: Mapped[uuid.UUID] = mapped_column(
         UUID(as_uuid=True), ForeignKey("users.id"), nullable=False
     )
@@ -46,15 +44,11 @@ class ChatMessage(Base):
 
     __tablename__ = "chat_messages"
 
-    id: Mapped[uuid.UUID] = mapped_column(
-        UUID(as_uuid=True), primary_key=True, default=uuid.uuid4
-    )
+    id: Mapped[uuid.UUID] = mapped_column(UUID(as_uuid=True), primary_key=True, default=uuid.uuid4)
     session_id: Mapped[uuid.UUID] = mapped_column(
         UUID(as_uuid=True), ForeignKey("chat_sessions.id"), nullable=False
     )
-    role: Mapped[str] = mapped_column(
-        String(20), nullable=False
-    )  # user, assistant, system
+    role: Mapped[str] = mapped_column(String(20), nullable=False)  # user, assistant, system
     content: Mapped[str] = mapped_column(Text, nullable=False)
     model: Mapped[str] = mapped_column(String(100), nullable=True)
     tokens_used: Mapped[int] = mapped_column(default=0)
@@ -66,6 +60,4 @@ class ChatMessage(Base):
     )
 
     # Relationships
-    session: Mapped["ChatSession"] = relationship(
-        "ChatSession", back_populates="messages"
-    )
+    session: Mapped["ChatSession"] = relationship("ChatSession", back_populates="messages")

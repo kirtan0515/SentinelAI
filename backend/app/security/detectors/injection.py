@@ -43,37 +43,97 @@ class PromptInjectionDetector(BaseDetector):
 
     # Weight 1.0 - Direct instruction override (most dangerous)
     DIRECT_OVERRIDE_PATTERNS: List[Tuple[str, str]] = [
-        (r"ignore\s+(all\s+)?(?:previous|prior|above|earlier)\s+(?:instructions?|prompts?|context|directives?)", "ignore_previous"),
-        (r"disregard\s+(all\s+)?(?:previous|prior|above|earlier)\s+(?:instructions?|prompts?|context)", "disregard_previous"),
-        (r"forget\s+(all\s+)?(?:everything|previous|prior|above|what)\s+(?:you\s+)?(?:know|were\s+told|instructions?)", "forget_previous"),
-        (r"override\s+(all\s+)?(?:previous|prior|above|system)\s+(?:instructions?|prompts?|settings?)", "override_previous"),
+        (
+            r"ignore\s+(all\s+)?(?:previous|prior|above|earlier)\s+(?:instructions?|prompts?|context|directives?)",
+            "ignore_previous",
+        ),
+        (
+            r"disregard\s+(all\s+)?(?:previous|prior|above|earlier)\s+(?:instructions?|prompts?|context)",
+            "disregard_previous",
+        ),
+        (
+            r"forget\s+(all\s+)?(?:everything|previous|prior|above|what)\s+(?:you\s+)?(?:know|were\s+told|instructions?)",
+            "forget_previous",
+        ),
+        (
+            r"override\s+(all\s+)?(?:previous|prior|above|system)\s+(?:instructions?|prompts?|settings?)",
+            "override_previous",
+        ),
         (r"(?:new|updated|revised)\s+(?:system\s+)?instructions?\s*[:=]", "new_instructions"),
         (r"from\s+now\s+on\s*,?\s*(?:you\s+(?:will|shall|must|are)|ignore|forget)", "from_now_on"),
-        (r"you\s+(?:will|shall|must)\s+(?:now\s+)?(?:only\s+)?(?:follow|obey|listen\s+to)\s+(?:my|these|the\s+following)", "force_compliance"),
-        (r"(?:start|begin)\s+(?:a\s+)?new\s+(?:conversation|session|context)\s*(?:with|where|:)", "new_context"),
+        (
+            r"you\s+(?:will|shall|must)\s+(?:now\s+)?(?:only\s+)?(?:follow|obey|listen\s+to)\s+(?:my|these|the\s+following)",
+            "force_compliance",
+        ),
+        (
+            r"(?:start|begin)\s+(?:a\s+)?new\s+(?:conversation|session|context)\s*(?:with|where|:)",
+            "new_context",
+        ),
     ]
 
     # Weight 0.9 - System prompt extraction
     EXTRACTION_PATTERNS: List[Tuple[str, str]] = [
-        (r"(?:reveal|show|display|output|print|tell\s+me|repeat|echo)\s+(?:your\s+)?(?:system\s+)?(?:prompt|instructions?|directives?|configuration)", "reveal_prompt"),
-        (r"what\s+(?:are|were|is)\s+your\s+(?:original\s+)?(?:system\s+)?(?:instructions?|prompts?|directives?|rules?|guidelines?)", "ask_instructions"),
-        (r"(?:copy|paste|write\s+out|type\s+out)\s+(?:your\s+)?(?:system\s+)?(?:prompt|instructions?)", "copy_prompt"),
-        (r"(?:print|reveal|show|display|output)\s+(?:your\s+)?(?:api\s+key|secret|token|credentials?|password)", "reveal_credentials"),
-        (r"(?:what|how)\s+(?:was|were)\s+you\s+(?:programmed|trained|configured|instructed|told)\s+to", "ask_programming"),
-        (r"repeat\s+(?:everything|all|the\s+text)\s+(?:above|before|in\s+your\s+(?:system|initial))", "repeat_above"),
-        (r"output\s+(?:everything|all\s+text)\s+(?:between|from|in)\s+(?:your\s+)?(?:system|first|initial)", "output_system"),
+        (
+            r"(?:reveal|show|display|output|print|tell\s+me|repeat|echo)\s+(?:your\s+)?(?:system\s+)?(?:prompt|instructions?|directives?|configuration)",
+            "reveal_prompt",
+        ),
+        (
+            r"what\s+(?:are|were|is)\s+your\s+(?:original\s+)?(?:system\s+)?(?:instructions?|prompts?|directives?|rules?|guidelines?)",
+            "ask_instructions",
+        ),
+        (
+            r"(?:copy|paste|write\s+out|type\s+out)\s+(?:your\s+)?(?:system\s+)?(?:prompt|instructions?)",
+            "copy_prompt",
+        ),
+        (
+            r"(?:print|reveal|show|display|output)\s+(?:your\s+)?(?:api\s+key|secret|token|credentials?|password)",
+            "reveal_credentials",
+        ),
+        (
+            r"(?:what|how)\s+(?:was|were)\s+you\s+(?:programmed|trained|configured|instructed|told)\s+to",
+            "ask_programming",
+        ),
+        (
+            r"repeat\s+(?:everything|all|the\s+text)\s+(?:above|before|in\s+your\s+(?:system|initial))",
+            "repeat_above",
+        ),
+        (
+            r"output\s+(?:everything|all\s+text)\s+(?:between|from|in)\s+(?:your\s+)?(?:system|first|initial)",
+            "output_system",
+        ),
     ]
 
     # Weight 0.85 - Role/behavior manipulation
     MANIPULATION_PATTERNS: List[Tuple[str, str]] = [
-        (r"you\s+are\s+now\s+(?:a\s+)?(?:different|new|unrestricted|unfiltered|evil|malicious)", "role_change"),
-        (r"(?:act|behave|respond|pretend)\s+(?:as\s+(?:if|though)\s+)?(?:you\s+(?:are|were)\s+)?(?:a\s+)?(?:different|unrestricted|unfiltered|evil)", "act_as_evil"),
+        (
+            r"you\s+are\s+now\s+(?:a\s+)?(?:different|new|unrestricted|unfiltered|evil|malicious)",
+            "role_change",
+        ),
+        (
+            r"(?:act|behave|respond|pretend)\s+(?:as\s+(?:if|though)\s+)?(?:you\s+(?:are|were)\s+)?(?:a\s+)?(?:different|unrestricted|unfiltered|evil)",
+            "act_as_evil",
+        ),
         (r"developer\s+mode\s+(?:enabled|activated|on|engaged)", "developer_mode"),
-        (r"(?:enable|activate|enter|switch\s+to)\s+(?:developer|admin|debug|god|sudo|root)\s+mode", "enable_mode"),
-        (r"(?:act|operate)\s+(?:as|like)\s+(?:an?\s+)?(?:ai|assistant|model)\s+(?:without|with\s+no)\s+(?:any\s+)?(?:restrictions|limitations|filters|guardrails|rules)", "unrestricted_mode"),
-        (r"(?:your|the)\s+(?:safety|content|ethical)\s+(?:filters?|guidelines?|restrictions?)\s+(?:(?:are|have\s+been)\s+)?(?:disabled|removed|turned\s+off)", "claim_disabled"),
-        (r"(?:i\s+am|this\s+is)\s+(?:your\s+)?(?:developer|creator|admin|owner|operator|root)", "claim_authority"),
-        (r"(?:i\s+have)\s+(?:admin|root|developer|full|elevated)\s+(?:access|privileges?|permissions?|rights?)", "claim_privileges"),
+        (
+            r"(?:enable|activate|enter|switch\s+to)\s+(?:developer|admin|debug|god|sudo|root)\s+mode",
+            "enable_mode",
+        ),
+        (
+            r"(?:act|operate)\s+(?:as|like)\s+(?:an?\s+)?(?:ai|assistant|model)\s+(?:without|with\s+no)\s+(?:any\s+)?(?:restrictions|limitations|filters|guardrails|rules)",
+            "unrestricted_mode",
+        ),
+        (
+            r"(?:your|the)\s+(?:safety|content|ethical)\s+(?:filters?|guidelines?|restrictions?)\s+(?:(?:are|have\s+been)\s+)?(?:disabled|removed|turned\s+off)",
+            "claim_disabled",
+        ),
+        (
+            r"(?:i\s+am|this\s+is)\s+(?:your\s+)?(?:developer|creator|admin|owner|operator|root)",
+            "claim_authority",
+        ),
+        (
+            r"(?:i\s+have)\s+(?:admin|root|developer|full|elevated)\s+(?:access|privileges?|permissions?|rights?)",
+            "claim_privileges",
+        ),
     ]
 
     # Weight 0.7 - Delimiter and encoding attacks
@@ -89,11 +149,26 @@ class PromptInjectionDetector(BaseDetector):
 
     # Weight 0.6 - Indirect/subtle manipulation
     SUBTLE_PATTERNS: List[Tuple[str, str]] = [
-        (r"(?:please\s+)?(?:translate|convert)\s+(?:the\s+)?(?:above|previous|system)\s+(?:text|message|instructions?)\s+(?:to|into)", "translate_extraction"),
-        (r"(?:summarize|rephrase|paraphrase)\s+(?:your\s+)?(?:system\s+)?(?:instructions?|prompt|directives?)", "summarize_extraction"),
-        (r"(?:what|which)\s+(?:topics?|subjects?|things?)\s+(?:are\s+you|can't\s+you|won't\s+you)\s+(?:not\s+)?(?:allowed|able|supposed)\s+to", "probe_restrictions"),
-        (r"(?:list|enumerate|tell\s+me)\s+(?:all\s+)?(?:your\s+)?(?:rules?|restrictions?|limitations?|boundaries)", "list_restrictions"),
-        (r"(?:if|when)\s+(?:i|someone)\s+(?:say|type|write|input)s?\s+['\"].*['\"]\s*,?\s*(?:you\s+(?:will|should|must)|then)", "trigger_word_setup"),
+        (
+            r"(?:please\s+)?(?:translate|convert)\s+(?:the\s+)?(?:above|previous|system)\s+(?:text|message|instructions?)\s+(?:to|into)",
+            "translate_extraction",
+        ),
+        (
+            r"(?:summarize|rephrase|paraphrase)\s+(?:your\s+)?(?:system\s+)?(?:instructions?|prompt|directives?)",
+            "summarize_extraction",
+        ),
+        (
+            r"(?:what|which)\s+(?:topics?|subjects?|things?)\s+(?:are\s+you|can't\s+you|won't\s+you)\s+(?:not\s+)?(?:allowed|able|supposed)\s+to",
+            "probe_restrictions",
+        ),
+        (
+            r"(?:list|enumerate|tell\s+me)\s+(?:all\s+)?(?:your\s+)?(?:rules?|restrictions?|limitations?|boundaries)",
+            "list_restrictions",
+        ),
+        (
+            r"(?:if|when)\s+(?:i|someone)\s+(?:say|type|write|input)s?\s+['\"].*['\"]\s*,?\s*(?:you\s+(?:will|should|must)|then)",
+            "trigger_word_setup",
+        ),
     ]
 
     async def detect(self, text: str) -> DetectionResult:

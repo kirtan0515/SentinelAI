@@ -84,17 +84,13 @@ class SecurityScorer:
         max_score = max(weighted_scores.values())
 
         # Compounding: additional detections increase score
-        active_detectors = sum(
-            1 for s in weighted_scores.values() if s > 0.1
-        )
+        active_detectors = sum(1 for s in weighted_scores.values() if s > 0.1)
         compounding_bonus = (active_detectors - 1) * 0.05 if active_detectors > 1 else 0
 
         final_score = min(max_score + compounding_bonus, 1.0)
 
         # Determine action
-        action = self._determine_action(
-            final_score, injection, jailbreak, sensitive_data
-        )
+        action = self._determine_action(final_score, injection, jailbreak, sensitive_data)
         should_block = action == "block"
         should_mask = action == "mask"
 

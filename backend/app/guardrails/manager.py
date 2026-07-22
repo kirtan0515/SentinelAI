@@ -69,9 +69,7 @@ class GuardrailsManager:
                     config_path=config_path,
                 )
         except ImportError:
-            logger.info(
-                "NeMo Guardrails not installed, using built-in security engine only"
-            )
+            logger.info("NeMo Guardrails not installed, using built-in security engine only")
         except Exception as e:
             logger.warning(
                 "Failed to initialize NeMo Guardrails",
@@ -110,8 +108,7 @@ class GuardrailsManager:
             ]
 
             is_blocked = any(
-                indicator.lower() in content.lower()
-                for indicator in blocked_indicators
+                indicator.lower() in content.lower() for indicator in blocked_indicators
             )
 
             if is_blocked:
@@ -132,9 +129,7 @@ class GuardrailsManager:
                 details={"error": str(e), "fallback": True},
             )
 
-    async def check_output(
-        self, prompt: str, response: str
-    ) -> GuardrailsResult:
+    async def check_output(self, prompt: str, response: str) -> GuardrailsResult:
         """
         Apply output guardrails to an LLM response.
 

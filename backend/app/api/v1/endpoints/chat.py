@@ -77,9 +77,7 @@ async def send_message(
     )
 
     # === STEP 4: Response Security Filter ===
-    filtered_message, filter_metadata = await security_service.filter_response(
-        response.message
-    )
+    filtered_message, filter_metadata = await security_service.filter_response(response.message)
     response.message = filtered_message
     response.security_score = security_result.score
 

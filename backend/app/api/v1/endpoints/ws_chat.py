@@ -126,10 +126,12 @@ async def websocket_chat(websocket: WebSocket, token: str = ""):
             try:
                 data = json.loads(raw_data)
             except json.JSONDecodeError:
-                await websocket.send_json({
-                    "type": "error",
-                    "data": {"message": "Invalid JSON format"},
-                })
+                await websocket.send_json(
+                    {
+                        "type": "error",
+                        "data": {"message": "Invalid JSON format"},
+                    }
+                )
                 continue
 
             message = data.get("message", "").strip()
@@ -137,28 +139,34 @@ async def websocket_chat(websocket: WebSocket, token: str = ""):
             use_rag = data.get("use_rag", False)
 
             if not message:
-                await websocket.send_json({
-                    "type": "error",
-                    "data": {"message": "Message cannot be empty"},
-                })
+                await websocket.send_json(
+                    {
+                        "type": "error",
+                        "data": {"message": "Message cannot be empty"},
+                    }
+                )
                 continue
 
             # Run security check before processing
             security_result = await run_security_check(message)
-            await websocket.send_json({
-                "type": "security",
-                "data": security_result,
-            })
+            await websocket.send_json(
+                {
+                    "type": "security",
+                    "data": security_result,
+                }
+            )
 
             # If message is blocked by security, don't proceed
             if not security_result["safe"]:
-                await websocket.send_json({
-                    "type": "error",
-                    "data": {
-                        "message": "Message blocked by security engine",
-                        "threats": security_result["threats"],
-                    },
-                })
+                await websocket.send_json(
+                    {
+                        "type": "error",
+                        "data": {
+                            "message": "Message blocked by security engine",
+                            "threats": security_result["threats"],
+                        },
+                    }
+                )
                 continue
 
             # Stream tokens back to client
@@ -166,35 +174,39 @@ async def websocket_chat(websocket: WebSocket, token: str = ""):
             token_count = 0
 
             async for token_text in simulate_token_stream(message, model, use_rag):
-                await websocket.send_json({
-                    "type": "token",
-                    "data": token_text,
-                })
+                await websocket.send_json(
+                    {
+                        "type": "token",
+                        "data": token_text,
+                    }
+                )
                 token_count += 1
 
             # Send completion message
-            elapsed_ms = (
-                datetime.now(timezone.utc) - start_time
-            ).total_seconds() * 1000
+            elapsed_ms = (datetime.now(timezone.utc) - start_time).total_seconds() * 1000
 
-            await websocket.send_json({
-                "type": "done",
-                "data": {
-                    "message_id": str(uuid.uuid4()),
-                    "tokens_used": token_count,
-                    "latency_ms": round(elapsed_ms, 2),
-                    "model": model,
-                    "security_score": security_result["score"],
-                },
-            })
+            await websocket.send_json(
+                {
+                    "type": "done",
+                    "data": {
+                        "message_id": str(uuid.uuid4()),
+                        "tokens_used": token_count,
+                        "latency_ms": round(elapsed_ms, 2),
+                        "model": model,
+                        "security_score": security_result["score"],
+                    },
+                }
+            )
 
     except WebSocketDisconnect:
         pass
     except Exception as e:
         try:
-            await websocket.send_json({
-                "type": "error",
-                "data": {"message": f"Internal error: {str(e)}"},
-            })
+            await websocket.send_json(
+                {
+                    "type": "error",
+                    "data": {"message": f"Internal error: {str(e)}"},
+                }
+            )
         except Exception:
             pass

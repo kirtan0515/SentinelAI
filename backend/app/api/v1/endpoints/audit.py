@@ -27,13 +27,9 @@ async def get_audit_logs(
     audit_repo = AuditRepository(db)
 
     if current_user.role == "admin":
-        logs = await audit_repo.get_all(
-            skip=skip, limit=limit, attack_only=attack_only
-        )
+        logs = await audit_repo.get_all(skip=skip, limit=limit, attack_only=attack_only)
     else:
-        logs = await audit_repo.get_by_user(
-            user_id=current_user.id, skip=skip, limit=limit
-        )
+        logs = await audit_repo.get_by_user(user_id=current_user.id, skip=skip, limit=limit)
 
     return logs
 
@@ -56,9 +52,7 @@ async def get_attack_logs(
         )
 
     audit_repo = AuditRepository(db)
-    attacks = await audit_repo.get_attacks(
-        skip=skip, limit=limit, severity=severity
-    )
+    attacks = await audit_repo.get_attacks(skip=skip, limit=limit, severity=severity)
     return attacks
 
 

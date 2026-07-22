@@ -140,8 +140,7 @@ class SecurityEngine:
 
         should_block = max_score >= self.config.global_block_threshold
         should_mask = (
-            sensitive_result.detected
-            and self.config.response_filter.filter_pii_in_response
+            sensitive_result.detected and self.config.response_filter.filter_pii_in_response
         )
 
         threats = []

@@ -54,9 +54,7 @@ class AnthropicProvider(BaseProvider):
                 if msg.role == MessageRole.SYSTEM:
                     system_message = msg.content
                 else:
-                    conversation_messages.append(
-                        {"role": msg.role.value, "content": msg.content}
-                    )
+                    conversation_messages.append({"role": msg.role.value, "content": msg.content})
 
             # Build request kwargs
             kwargs = {

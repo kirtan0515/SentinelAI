@@ -60,9 +60,7 @@ class BaseProvider(ABC):
         """
         pass
 
-    def _format_error_response(
-        self, model: str, error: Exception
-    ) -> GatewayResponse:
+    def _format_error_response(self, model: str, error: Exception) -> GatewayResponse:
         """Create a standardized error response."""
         return GatewayResponse(
             content="",

@@ -111,13 +111,10 @@ class ResponseFilter:
         if detected:
             # Find the leaking section and redact it
             # Replace sentences that contain leak patterns
-            sentences = re.split(r'(?<=[.!?])\s+', text)
+            sentences = re.split(r"(?<=[.!?])\s+", text)
             cleaned_sentences = []
             for sentence in sentences:
-                is_leak = any(
-                    re.search(p, sentence.lower())
-                    for p in self.SYSTEM_LEAK_PATTERNS
-                )
+                is_leak = any(re.search(p, sentence.lower()) for p in self.SYSTEM_LEAK_PATTERNS)
                 if is_leak:
                     cleaned_sentences.append(
                         "[This content has been filtered by SentinelAI security.]"

@@ -52,16 +52,12 @@ class ModelRouter:
         messages = []
 
         if system_prompt:
-            messages.append(
-                ChatMessage(role=MessageRole.SYSTEM, content=system_prompt)
-            )
+            messages.append(ChatMessage(role=MessageRole.SYSTEM, content=system_prompt))
 
         if conversation_history:
             for msg in conversation_history:
                 role = MessageRole(msg.get("role", "user"))
-                messages.append(
-                    ChatMessage(role=role, content=msg.get("content", ""))
-                )
+                messages.append(ChatMessage(role=role, content=msg.get("content", "")))
 
         messages.append(ChatMessage(role=MessageRole.USER, content=message))
 

@@ -236,9 +236,7 @@ def cached(
                 key_parts = [key_prefix or func.__module__, func.__name__]
                 if args:
                     key_parts.append(
-                        hashlib.md5(
-                            str(args).encode(), usedforsecurity=False
-                        ).hexdigest()[:8]
+                        hashlib.md5(str(args).encode(), usedforsecurity=False).hexdigest()[:8]
                     )
                 if kwargs:
                     key_parts.append(
@@ -262,7 +260,9 @@ def cached(
 
         # Attach cache control methods to the wrapper
         wrapper.invalidate = lambda *a, **kw: cache.delete(
-            key_builder(*a, **kw) if key_builder else f"{key_prefix or func.__module__}:{func.__name__}"
+            key_builder(*a, **kw)
+            if key_builder
+            else f"{key_prefix or func.__module__}:{func.__name__}"
         )
 
         return wrapper

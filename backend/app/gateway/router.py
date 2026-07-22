@@ -272,9 +272,7 @@ class GatewayRouter:
         """Look up model metadata."""
         return SUPPORTED_MODELS.get(model)
 
-    def _estimate_cost(
-        self, model_info: ModelInfo, tokens_input: int, tokens_output: int
-    ) -> float:
+    def _estimate_cost(self, model_info: ModelInfo, tokens_input: int, tokens_output: int) -> float:
         """Estimate cost in USD for the request."""
         input_cost = (tokens_input / 1000) * model_info.cost_per_1k_input
         output_cost = (tokens_output / 1000) * model_info.cost_per_1k_output
