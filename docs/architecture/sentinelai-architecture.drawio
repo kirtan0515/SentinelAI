@@ -1,0 +1,168 @@
+<mxfile host="app.diagrams.net">
+  <diagram name="SentinelAI Architecture" id="sentinel-arch">
+    <mxGraphModel dx="1422" dy="762" grid="1" gridSize="10" guides="1" tooltips="1" connect="1" arrows="1" fold="1" page="1" pageScale="1" pageWidth="1600" pageHeight="1200" math="0" shadow="0">
+      <root>
+        <mxCell id="0" />
+        <mxCell id="1" parent="0" />
+
+        <!-- Title -->
+        <mxCell id="title" value="SentinelAI — Enterprise AI Security Gateway Architecture" style="text;html=1;strokeColor=none;fillColor=none;align=center;verticalAlign=middle;whiteSpace=wrap;rounded=0;fontSize=20;fontStyle=1;fontColor=#232F3E;" vertex="1" parent="1">
+          <mxGeometry x="400" y="20" width="600" height="40" as="geometry" />
+        </mxCell>
+
+        <!-- Users / Clients -->
+        <mxCell id="users-group" value="Users" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#232F3E;fontColor=#ffffff;strokeColor=#232F3E;fontSize=11;verticalAlign=top;fontStyle=1;" vertex="1" parent="1">
+          <mxGeometry x="50" y="80" width="300" height="100" as="geometry" />
+        </mxCell>
+        <mxCell id="browser" value="&#xa;Browser&#xa;(Web App)" style="shape=mxgraph.aws4.client;outlineConnect=0;fontColor=#232F3E;gradientColor=none;fillColor=#232F3E;strokeColor=none;dashed=0;verticalLabelPosition=bottom;verticalAlign=top;align=center;html=1;fontSize=10;fontStyle=0;aspect=fixed;pointerEvents=1;" vertex="1" parent="1">
+          <mxGeometry x="80" y="110" width="50" height="50" as="geometry" />
+        </mxCell>
+        <mxCell id="mobile" value="&#xa;Mobile&#xa;(Future)" style="shape=mxgraph.aws4.mobile_client;outlineConnect=0;fontColor=#232F3E;gradientColor=none;fillColor=#232F3E;strokeColor=none;dashed=0;verticalLabelPosition=bottom;verticalAlign=top;align=center;html=1;fontSize=10;fontStyle=0;aspect=fixed;" vertex="1" parent="1">
+          <mxGeometry x="170" y="110" width="40" height="50" as="geometry" />
+        </mxCell>
+        <mxCell id="apiuser" value="&#xa;API&#xa;Client" style="shape=mxgraph.aws4.traditional_server;outlineConnect=0;fontColor=#232F3E;gradientColor=none;fillColor=#232F3E;strokeColor=none;dashed=0;verticalLabelPosition=bottom;verticalAlign=top;align=center;html=1;fontSize=10;fontStyle=0;aspect=fixed;" vertex="1" parent="1">
+          <mxGeometry x="260" y="110" width="40" height="50" as="geometry" />
+        </mxCell>
+
+        <!-- CloudFront / ALB -->
+        <mxCell id="alb" value="Application&#xa;Load Balancer" style="outlineConnect=0;fontColor=#232F3E;gradientColor=none;fillColor=#8C4FFF;strokeColor=none;dashed=0;verticalLabelPosition=bottom;verticalAlign=top;align=center;html=1;fontSize=10;fontStyle=0;aspect=fixed;shape=mxgraph.aws4.resourceIcon;resIcon=mxgraph.aws4.elasticloadbalancing;" vertex="1" parent="1">
+          <mxGeometry x="170" y="240" width="50" height="50" as="geometry" />
+        </mxCell>
+
+        <!-- Frontend -->
+        <mxCell id="frontend-box" value="Frontend (Next.js 14)" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#FF9900;fontColor=#ffffff;strokeColor=#FF9900;fontSize=11;verticalAlign=top;fontStyle=1;arcSize=8;" vertex="1" parent="1">
+          <mxGeometry x="400" y="80" width="250" height="120" as="geometry" />
+        </mxCell>
+        <mxCell id="fe-pages" value="Pages: Dashboard, Chat,&#xa;Documents, Security,&#xa;Admin, Audit, Settings" style="text;html=1;strokeColor=none;fillColor=none;align=left;verticalAlign=middle;whiteSpace=wrap;fontSize=9;fontColor=#ffffff;" vertex="1" parent="1">
+          <mxGeometry x="420" y="105" width="200" height="50" as="geometry" />
+        </mxCell>
+        <mxCell id="fe-tech" value="React + TypeScript + Tailwind&#xa;Zustand + Recharts + Axios" style="text;html=1;strokeColor=none;fillColor=none;align=left;verticalAlign=middle;whiteSpace=wrap;fontSize=9;fontColor=#ffffff;" vertex="1" parent="1">
+          <mxGeometry x="420" y="155" width="200" height="30" as="geometry" />
+        </mxCell>
+
+        <!-- Backend API -->
+        <mxCell id="backend-box" value="Backend API (FastAPI)" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#3F8624;fontColor=#ffffff;strokeColor=#3F8624;fontSize=11;verticalAlign=top;fontStyle=1;arcSize=8;" vertex="1" parent="1">
+          <mxGeometry x="400" y="240" width="250" height="90" as="geometry" />
+        </mxCell>
+        <mxCell id="be-features" value="REST API + WebSocket&#xa;JWT Auth + RBAC + Rate Limiting&#xa;Swagger Docs + Prometheus Metrics" style="text;html=1;strokeColor=none;fillColor=none;align=left;verticalAlign=middle;whiteSpace=wrap;fontSize=9;fontColor=#ffffff;" vertex="1" parent="1">
+          <mxGeometry x="420" y="265" width="220" height="50" as="geometry" />
+        </mxCell>
+
+        <!-- Security Engine -->
+        <mxCell id="security-box" value="Security Engine" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#DD3522;fontColor=#ffffff;strokeColor=#DD3522;fontSize=11;verticalAlign=top;fontStyle=1;arcSize=8;" vertex="1" parent="1">
+          <mxGeometry x="400" y="370" width="250" height="130" as="geometry" />
+        </mxCell>
+        <mxCell id="sec-detect" value="Prompt Injection Detector (40+ patterns)&#xa;Jailbreak Detector (50+ patterns)&#xa;Sensitive Data Detector (PII masking)&#xa;Heuristic Analyzer (entropy, encoding)&#xa;Response Filter (output validation)" style="text;html=1;strokeColor=none;fillColor=none;align=left;verticalAlign=middle;whiteSpace=wrap;fontSize=9;fontColor=#ffffff;" vertex="1" parent="1">
+          <mxGeometry x="415" y="395" width="225" height="80" as="geometry" />
+        </mxCell>
+        <mxCell id="sec-score" value="Scoring: allow / flag / mask / block" style="text;html=1;strokeColor=none;fillColor=none;align=left;verticalAlign=middle;whiteSpace=wrap;fontSize=8;fontColor=#ffcccc;fontStyle=2;" vertex="1" parent="1">
+          <mxGeometry x="415" y="478" width="220" height="15" as="geometry" />
+        </mxCell>
+
+        <!-- AI Gateway -->
+        <mxCell id="gateway-box" value="AI Gateway (Router)" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#8C4FFF;fontColor=#ffffff;strokeColor=#8C4FFF;fontSize=11;verticalAlign=top;fontStyle=1;arcSize=8;" vertex="1" parent="1">
+          <mxGeometry x="400" y="540" width="250" height="110" as="geometry" />
+        </mxCell>
+        <mxCell id="gw-features" value="Circuit Breaker (per provider)&#xa;Retry + Exponential Backoff&#xa;Automatic Fallback Chains&#xa;Cost Estimation + Token Counting" style="text;html=1;strokeColor=none;fillColor=none;align=left;verticalAlign=middle;whiteSpace=wrap;fontSize=9;fontColor=#ffffff;" vertex="1" parent="1">
+          <mxGeometry x="415" y="565" width="225" height="65" as="geometry" />
+        </mxCell>
+
+        <!-- LLM Providers -->
+        <mxCell id="llm-group" value="LLM Providers" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#232F3E;fontColor=#ffffff;strokeColor=#232F3E;fontSize=11;verticalAlign=top;fontStyle=1;dashed=1;dashPattern=5 5;" vertex="1" parent="1">
+          <mxGeometry x="750" y="520" width="350" height="150" as="geometry" />
+        </mxCell>
+        <mxCell id="ollama-box" value="Ollama ★&#xa;Llama 3&#xa;FREE" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#3F8624;fontColor=#ffffff;strokeColor=#3F8624;fontSize=9;fontStyle=1;arcSize=12;" vertex="1" parent="1">
+          <mxGeometry x="770" y="555" width="70" height="70" as="geometry" />
+        </mxCell>
+        <mxCell id="openai-box" value="OpenAI&#xa;GPT-4&#xa;(paid)" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#545B64;fontColor=#ffffff;strokeColor=#545B64;fontSize=9;arcSize=12;" vertex="1" parent="1">
+          <mxGeometry x="855" y="555" width="70" height="70" as="geometry" />
+        </mxCell>
+        <mxCell id="anthropic-box" value="Anthropic&#xa;Claude&#xa;(paid)" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#545B64;fontColor=#ffffff;strokeColor=#545B64;fontSize=9;arcSize=12;" vertex="1" parent="1">
+          <mxGeometry x="940" y="555" width="70" height="70" as="geometry" />
+        </mxCell>
+        <mxCell id="google-box" value="Google&#xa;Gemini&#xa;(paid)" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#545B64;fontColor=#ffffff;strokeColor=#545B64;fontSize=9;arcSize=12;" vertex="1" parent="1">
+          <mxGeometry x="1025" y="555" width="60" height="70" as="geometry" />
+        </mxCell>
+
+        <!-- RAG Pipeline -->
+        <mxCell id="rag-box" value="RAG Pipeline" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#1061B0;fontColor=#ffffff;strokeColor=#1061B0;fontSize=11;verticalAlign=top;fontStyle=1;arcSize=8;" vertex="1" parent="1">
+          <mxGeometry x="750" y="370" width="350" height="100" as="geometry" />
+        </mxCell>
+        <mxCell id="rag-steps" value="Upload → Extract (PDF/DOCX/TXT) → Chunk (recursive + overlap)&#xa;→ Embed (Ollama nomic-embed-text, FREE) → Store (pgvector)&#xa;→ Query (cosine similarity) → Context → LLM → Answer + Sources" style="text;html=1;strokeColor=none;fillColor=none;align=left;verticalAlign=middle;whiteSpace=wrap;fontSize=9;fontColor=#ffffff;" vertex="1" parent="1">
+          <mxGeometry x="765" y="400" width="325" height="55" as="geometry" />
+        </mxCell>
+
+        <!-- Data Layer -->
+        <mxCell id="postgres" value="PostgreSQL 16&#xa;+ pgvector" style="outlineConnect=0;fontColor=#232F3E;gradientColor=none;fillColor=#C925D1;strokeColor=none;dashed=0;verticalLabelPosition=bottom;verticalAlign=top;align=center;html=1;fontSize=10;fontStyle=0;aspect=fixed;shape=mxgraph.aws4.resourceIcon;resIcon=mxgraph.aws4.rds;" vertex="1" parent="1">
+          <mxGeometry x="80" y="400" width="50" height="50" as="geometry" />
+        </mxCell>
+        <mxCell id="redis" value="Redis 7&#xa;(Cache + Rate Limit)" style="outlineConnect=0;fontColor=#232F3E;gradientColor=none;fillColor=#C925D1;strokeColor=none;dashed=0;verticalLabelPosition=bottom;verticalAlign=top;align=center;html=1;fontSize=10;fontStyle=0;aspect=fixed;shape=mxgraph.aws4.resourceIcon;resIcon=mxgraph.aws4.elasticache;" vertex="1" parent="1">
+          <mxGeometry x="200" y="400" width="50" height="50" as="geometry" />
+        </mxCell>
+        <mxCell id="ollama-svc" value="Ollama ★&#xa;(Local LLM + Embed)" style="outlineConnect=0;fontColor=#232F3E;gradientColor=none;fillColor=#01A88D;strokeColor=none;dashed=0;verticalLabelPosition=bottom;verticalAlign=top;align=center;html=1;fontSize=10;fontStyle=0;aspect=fixed;shape=mxgraph.aws4.resourceIcon;resIcon=mxgraph.aws4.sagemaker;" vertex="1" parent="1">
+          <mxGeometry x="80" y="540" width="50" height="50" as="geometry" />
+        </mxCell>
+
+        <!-- Monitoring -->
+        <mxCell id="monitoring-box" value="Observability" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#E7157B;fontColor=#ffffff;strokeColor=#E7157B;fontSize=11;verticalAlign=top;fontStyle=1;arcSize=8;" vertex="1" parent="1">
+          <mxGeometry x="750" y="80" width="350" height="100" as="geometry" />
+        </mxCell>
+        <mxCell id="mon-items" value="Prometheus (metrics scraping + alerting)&#xa;Grafana (dashboards + visualization)&#xa;Structured Logging (structlog, JSON, request tracing)" style="text;html=1;strokeColor=none;fillColor=none;align=left;verticalAlign=middle;whiteSpace=wrap;fontSize=9;fontColor=#ffffff;" vertex="1" parent="1">
+          <mxGeometry x="770" y="105" width="310" height="55" as="geometry" />
+        </mxCell>
+
+        <!-- CI/CD -->
+        <mxCell id="cicd-box" value="CI/CD (GitHub Actions)" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#232F3E;fontColor=#ffffff;strokeColor=#545B64;fontSize=11;verticalAlign=top;fontStyle=1;arcSize=8;" vertex="1" parent="1">
+          <mxGeometry x="750" y="220" width="350" height="90" as="geometry" />
+        </mxCell>
+        <mxCell id="cicd-flow" value="Push → Lint → Test → Security Scan → Build Docker&#xa;→ Push ECR → Deploy Staging → Approve → Deploy Prod&#xa;Rollback available on failure" style="text;html=1;strokeColor=none;fillColor=none;align=left;verticalAlign=middle;whiteSpace=wrap;fontSize=9;fontColor=#ffffff;" vertex="1" parent="1">
+          <mxGeometry x="770" y="245" width="310" height="50" as="geometry" />
+        </mxCell>
+
+        <!-- Deployment Options -->
+        <mxCell id="deploy-box" value="Deployment" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#232F3E;fontColor=#ffffff;strokeColor=#545B64;fontSize=11;verticalAlign=top;fontStyle=1;arcSize=8;dashed=1;dashPattern=5 5;" vertex="1" parent="1">
+          <mxGeometry x="50" y="680" width="1060" height="80" as="geometry" />
+        </mxCell>
+        <mxCell id="deploy-local" value="LOCAL&#xa;Docker Compose" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#3F8624;fontColor=#ffffff;strokeColor=#3F8624;fontSize=9;fontStyle=1;arcSize=12;" vertex="1" parent="1">
+          <mxGeometry x="100" y="710" width="120" height="35" as="geometry" />
+        </mxCell>
+        <mxCell id="deploy-k8s" value="KUBERNETES&#xa;Kustomize + HPA" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#FF9900;fontColor=#ffffff;strokeColor=#FF9900;fontSize=9;fontStyle=1;arcSize=12;" vertex="1" parent="1">
+          <mxGeometry x="280" y="710" width="120" height="35" as="geometry" />
+        </mxCell>
+        <mxCell id="deploy-aws" value="AWS&#xa;ECS Fargate + RDS + ALB" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#8C4FFF;fontColor=#ffffff;strokeColor=#8C4FFF;fontSize=9;fontStyle=1;arcSize=12;" vertex="1" parent="1">
+          <mxGeometry x="460" y="710" width="160" height="35" as="geometry" />
+        </mxCell>
+        <mxCell id="deploy-terraform" value="TERRAFORM&#xa;Infrastructure as Code" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#545B64;fontColor=#ffffff;strokeColor=#545B64;fontSize=9;fontStyle=1;arcSize=12;" vertex="1" parent="1">
+          <mxGeometry x="680" y="710" width="140" height="35" as="geometry" />
+        </mxCell>
+
+        <!-- Arrows -->
+        <mxCell id="arrow1" style="edgeStyle=orthogonalEdgeStyle;rounded=0;orthogonalLoop=1;jettySize=auto;exitX=0.5;exitY=1;entryX=0;entryY=0.5;strokeColor=#232F3E;strokeWidth=2;" edge="1" parent="1" source="users-group" target="frontend-box">
+          <mxGeometry relative="1" as="geometry" />
+        </mxCell>
+        <mxCell id="arrow2" style="edgeStyle=orthogonalEdgeStyle;rounded=0;orthogonalLoop=1;jettySize=auto;exitX=0.5;exitY=1;entryX=0.5;entryY=0;strokeColor=#FF9900;strokeWidth=2;" edge="1" parent="1" source="frontend-box" target="backend-box">
+          <mxGeometry relative="1" as="geometry" />
+        </mxCell>
+        <mxCell id="arrow3" style="edgeStyle=orthogonalEdgeStyle;rounded=0;orthogonalLoop=1;jettySize=auto;exitX=0.5;exitY=1;entryX=0.5;entryY=0;strokeColor=#3F8624;strokeWidth=2;" edge="1" parent="1" source="backend-box" target="security-box">
+          <mxGeometry relative="1" as="geometry" />
+        </mxCell>
+        <mxCell id="arrow4" style="edgeStyle=orthogonalEdgeStyle;rounded=0;orthogonalLoop=1;jettySize=auto;exitX=0.5;exitY=1;entryX=0.5;entryY=0;strokeColor=#DD3522;strokeWidth=2;" edge="1" parent="1" source="security-box" target="gateway-box">
+          <mxGeometry relative="1" as="geometry" />
+        </mxCell>
+        <mxCell id="arrow5" style="edgeStyle=orthogonalEdgeStyle;rounded=0;orthogonalLoop=1;jettySize=auto;exitX=1;exitY=0.5;entryX=0;entryY=0.5;strokeColor=#8C4FFF;strokeWidth=2;" edge="1" parent="1" source="gateway-box" target="llm-group">
+          <mxGeometry relative="1" as="geometry" />
+        </mxCell>
+        <mxCell id="arrow6" style="edgeStyle=orthogonalEdgeStyle;rounded=0;orthogonalLoop=1;jettySize=auto;exitX=0;exitY=0.5;entryX=0.5;entryY=0;strokeColor=#C925D1;strokeWidth=1.5;dashed=1;" edge="1" parent="1" source="backend-box" target="postgres">
+          <mxGeometry relative="1" as="geometry" />
+        </mxCell>
+        <mxCell id="arrow7" style="edgeStyle=orthogonalEdgeStyle;rounded=0;orthogonalLoop=1;jettySize=auto;exitX=0;exitY=0.7;entryX=0.5;entryY=0;strokeColor=#C925D1;strokeWidth=1.5;dashed=1;" edge="1" parent="1" source="backend-box" target="redis">
+          <mxGeometry relative="1" as="geometry" />
+        </mxCell>
+        <mxCell id="arrow8" style="edgeStyle=orthogonalEdgeStyle;rounded=0;orthogonalLoop=1;jettySize=auto;exitX=1;exitY=0.5;entryX=0;entryY=0.5;strokeColor=#1061B0;strokeWidth=2;" edge="1" parent="1" source="security-box" target="rag-box">
+          <mxGeometry relative="1" as="geometry" />
+        </mxCell>
+
+      </root>
+    </mxGraphModel>
+  </diagram>
+</mxfile>
