@@ -1,7 +1,4 @@
-"""
-SentinelAI - Enterprise AI Security Gateway
-Main application entry point.
-"""
+"""FastAPI entry point."""
 
 from contextlib import asynccontextmanager
 

@@ -1,14 +1,4 @@
-"""
-Gateway Router - Production-grade AI model routing.
-
-Features:
-- Multi-provider routing (OpenAI, Anthropic, Google, Ollama)
-- Retry with exponential backoff
-- Circuit breaker per provider
-- Automatic fallback to alternate models
-- Cost estimation
-- Request/response logging
-"""
+"""Gateway router — routes requests to LLM providers with retry/fallback."""
 
 import asyncio
 import time

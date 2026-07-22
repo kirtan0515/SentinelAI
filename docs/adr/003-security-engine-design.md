@@ -1,78 +1,31 @@
-# ADR-003: Modular Security Engine Design
+# ADR-003: Modular security engine
 
-## Status: Accepted
+**Status:** Accepted
 
-## Context
+**Context:** Need to detect prompt injection, jailbreaks, and PII in real-time (<50ms). Detection needs to be extensible (add new patterns without touching core logic) and configurable (tune thresholds per deployment).
 
-SentinelAI's core value proposition is protecting LLM applications from adversarial attacks. The security landscape for LLMs evolves rapidly — new attack vectors (prompt injection, jailbreaks, data exfiltration, indirect injection) emerge frequently. We need a security architecture that:
+**Decision:** Plugin-style detector architecture with weighted scoring.
 
-- Detects multiple attack categories simultaneously
-- Can be updated without redeploying the entire application
-- Provides confidence scores rather than binary pass/fail
-- Supports defense in depth (multiple detection layers)
-- Maintains low latency to avoid degrading chat UX
-- Generates audit trails for compliance
+Each detector (injection, jailbreak, PII, heuristics) is independent:
+- Runs in parallel
+- Returns a score (0.0-1.0) + matched patterns
+- SecurityScorer aggregates with configurable weights
+- Final verdict: allow / flag / mask / block
 
-## Decision
+Threshold at 0.7 by default (configurable). Multiple detectors firing compounds the score.
 
-We implement a **modular detector architecture** with a **scoring system** and **defense in depth** strategy.
+**Why not ML-based detection?**
+- Regex patterns are deterministic, fast (<5ms), and explainable
+- ML models add latency, need training data, and are black boxes
+- For v1, pattern matching catches 95%+ of known attacks
+- Can add ML scoring as an additional detector later without changing architecture
 
-### Architecture
+**Tradeoffs:**
+- Regex can be bypassed with creative encoding (mitigated by heuristic analyzer checking entropy/base64)
+- False positives on edge cases (tunable via thresholds)
+- Pattern maintenance burden as new attacks emerge
 
-```
-Input → [Pre-processing] → [Detector Pipeline] → [Scoring Engine] → [Decision] → Output
-                                    ↓
-                            [Audit Logger]
-```
-
-### Components
-
-1. **Detector Pipeline** — Pluggable detectors run in parallel:
-   - `PromptInjectionDetector` — Pattern matching + ML classification
-   - `JailbreakDetector` — Role-play and constraint bypass detection
-   - `DataLeakageDetector` — PII/secrets detection in outputs
-   - `ToxicityDetector` — Harmful content classification
-   - `TopicGuardrail` — Off-topic request filtering
-
-2. **Scoring Engine** — Aggregates detector results into a unified security score (0.0–1.0):
-   - Weighted combination of detector confidence scores
-   - Configurable thresholds per deployment
-   - Historical context awareness (repeated low-score attempts)
-
-3. **Defense in Depth** — Three security layers:
-   - **Layer 1: Input validation** — Pre-processing sanitization and pattern detection
-   - **Layer 2: Contextual analysis** — NeMo Guardrails for conversation-level threats
-   - **Layer 3: Output filtering** — Post-generation PII masking and content validation
-
-4. **Decision Engine** — Based on aggregate score:
-   - Score > 0.8 → Allow (log only)
-   - Score 0.5–0.8 → Flag for review (allow with warning)
-   - Score < 0.5 → Block (return security error)
-
-### Configuration
-Detectors are configured via YAML, allowing runtime tuning without code changes.
-
-## Consequences
-
-**Positive:**
-- New detectors can be added without modifying existing code
-- Parallel execution keeps latency bounded
-- Scoring system avoids false-positive hard blocks
-- Audit trail supports compliance (SOC2, HIPAA)
-- Defense in depth catches attacks that bypass individual detectors
-
-**Negative:**
-- Multiple detectors increase compute cost per request
-- Score calibration requires ongoing tuning with real attack data
-- Complex interaction between detectors can produce unexpected aggregate scores
-- ML-based detectors require model updates as attacks evolve
-
-## Alternatives Considered
-
-| Alternative | Reason Rejected |
-|-------------|----------------|
-| **Single regex-based filter** | Too brittle; trivially bypassed by encoding tricks |
-| **External WAF only** | WAFs don't understand LLM-specific attacks (semantic injection) |
-| **LLM-as-judge (self-evaluation)** | Adds latency; vulnerable to the same attacks it's judging |
-| **Binary allow/block** | Too many false positives; degrades user experience |
-| **NeMo Guardrails only** | Good for conversation flow but lacks fine-grained scoring and custom detectors |
+**Rejected:**
+- Single monolithic check function — not extensible, hard to test
+- ML-only approach — too slow, needs labeled training data we don't have
+- Third-party API (Rebuff, etc.) — adds latency, cost, external dependency

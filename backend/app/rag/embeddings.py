@@ -1,12 +1,4 @@
-"""
-Embedding Service
-
-Generates vector embeddings using Ollama (local, free) or OpenAI (paid, optional).
-Default: Ollama with nomic-embed-text model (768 dimensions).
-Fallback: OpenAI text-embedding-ada-002 (1536 dimensions) if OPENAI_API_KEY is set.
-
-Ollama embedding is completely free and runs on your machine.
-"""
+"""Embedding service — generates vectors using Ollama (free) with OpenAI fallback."""
 
 import asyncio
 from typing import List

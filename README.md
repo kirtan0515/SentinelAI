@@ -1,200 +1,88 @@
-# SentinelAI - Enterprise AI Security Gateway
+# SentinelAI
 
-![License](https://img.shields.io/badge/license-MIT-blue.svg)
-![Python](https://img.shields.io/badge/python-3.11+-blue.svg)
-![Next.js](https://img.shields.io/badge/next.js-14-black.svg)
-![Docker](https://img.shields.io/badge/docker-ready-blue.svg)
+A security gateway for LLM applications. Sits between users and AI models (GPT-4, Claude, Gemini, Llama) to detect prompt injection, block jailbreaks, mask sensitive data, and log everything.
 
-## Overview
+Built because I wanted to understand how enterprise AI security actually works at the system level — not just "add a regex filter" but a proper multi-layer detection pipeline with scoring, fallbacks, and audit trails.
 
-SentinelAI is a cloud-native AI security platform that sits between enterprise users and Large Language Models (OpenAI, Anthropic Claude, Google Gemini, Ollama/Llama). It protects LLM applications from prompt injection, jailbreak attacks, data leakage, unauthorized access, and insecure AI usage while providing monitoring, authentication, auditing, and secure Retrieval-Augmented Generation (RAG).
-
-## Architecture
+## What it does
 
 ```
-User → Frontend (Next.js) → API Gateway → Authentication → Security Engine → Guardrails → Model Router → LLM
-                                                                                                          ↓
-User ← Frontend ← Response Filter ← Audit Logging ← ─────────────────────────────────────────── Response
+User → Auth → Rate Limit → Security Engine → Guardrails → AI Model → Response Filter → Audit Log → User
 ```
 
-## Core Features
+- Analyzes every prompt for injection/jailbreak patterns (90+ regex categories + heuristic scoring)
+- Masks PII (credit cards, SSN, API keys, etc.) before they hit the model
+- Routes to multiple LLM providers with circuit breaker + automatic fallback
+- Stores document embeddings in pgvector for RAG queries
+- Logs every request with security scores for compliance
 
-- **AI Security Gateway** - Every AI request passes through security checks before reaching LLMs
-- **Prompt Injection Detection** - Detects and blocks malicious prompt injection attempts
-- **Jailbreak Detection** - Identifies and rejects common jailbreak attack patterns
-- **Sensitive Data Detection** - Masks credit cards, SSNs, API keys, passwords before they reach models
-- **Secure RAG** - Upload documents, generate embeddings, query with pgvector
-- **Multi-Model Router** - Supports GPT, Claude, Gemini, Llama (Ollama)
-- **NVIDIA NeMo Guardrails** - Input/output guardrails for model interactions
-- **RBAC & Authentication** - AWS Cognito, OAuth2, JWT, MFA
-- **Audit Logging** - Complete request tracking with attack detection
-- **Monitoring Dashboard** - Real-time metrics, blocked attacks, system health
-- **Admin Portal** - User management, model configuration, guardrail settings
+## Quick start (free, no API keys needed)
 
-## Tech Stack
-
-| Layer | Technology |
-|-------|-----------|
-| Frontend | Next.js 14, React, TypeScript, Tailwind CSS, shadcn/ui |
-| Backend | Python 3.11+, FastAPI, Pydantic, SQLAlchemy |
-| Database | PostgreSQL 15, pgvector |
-| Auth | AWS Cognito, OAuth2, JWT, RBAC, MFA |
-| AI | OpenAI API, Anthropic Claude, Google Gemini, Ollama/Llama |
-| Guardrails | NVIDIA NeMo Guardrails |
-| Infrastructure | Docker, Docker Compose, Kubernetes, Terraform |
-| Cloud | AWS (ECS, RDS, S3, CloudWatch) |
-| Monitoring | Prometheus, Grafana, CloudWatch |
-| CI/CD | GitHub Actions |
-
-## Project Structure
-
-```
-SentinelAI/
-├── frontend/                 # Next.js frontend application
-│   ├── src/
-│   │   ├── app/             # Next.js App Router pages
-│   │   ├── components/      # Reusable React components
-│   │   ├── lib/             # Utilities and API client
-│   │   ├── hooks/           # Custom React hooks
-│   │   └── types/           # TypeScript type definitions
-│   └── ...
-├── backend/                  # FastAPI backend application
-│   ├── app/
-│   │   ├── api/             # API route handlers
-│   │   ├── core/            # Configuration and dependencies
-│   │   ├── models/          # SQLAlchemy ORM models
-│   │   ├── schemas/         # Pydantic schemas
-│   │   ├── services/        # Business logic layer
-│   │   ├── repositories/    # Data access layer
-│   │   ├── security/        # Security engine (injection, jailbreak, PII)
-│   │   ├── guardrails/      # NVIDIA NeMo Guardrails
-│   │   ├── rag/             # RAG pipeline
-│   │   └── middleware/      # Custom middleware
-│   ├── alembic/             # Database migrations
-│   └── tests/               # Test suites
-├── infrastructure/           # DevOps and deployment
-│   ├── docker/              # Dockerfiles
-│   ├── kubernetes/          # K8s manifests
-│   ├── terraform/           # Infrastructure as Code
-│   └── monitoring/          # Prometheus & Grafana configs
-├── docs/                     # Documentation
-├── scripts/                  # Utility scripts
-├── .github/workflows/        # CI/CD pipelines
-├── docker-compose.yml        # Local development orchestration
-└── .env.example              # Environment variable template
-```
-
-## Quick Start
-## Quick Start (100% Free)
-
-### Prerequisites
-
-- Docker Desktop ([download](https://docker.com/products/docker-desktop))
-- Ollama ([download](https://ollama.com/download))
-- Node.js 18+ ([download](https://nodejs.org))
-- Python 3.11+
-
-### Setup (5 minutes)
+Requires: Docker, [Ollama](https://ollama.com/download), Node.js 18+, Python 3.11+
 
 ```bash
-# 1. Clone
 git clone https://github.com/kirtan0515/SentinelAI.git
 cd SentinelAI
 
-# 2. Start database + cache
+# Database + cache
 docker-compose up -d postgres redis
 
-# 3. Pull free AI models (runs locally, no API key needed)
+# Local AI (free)
 ollama pull llama3
 ollama pull nomic-embed-text
-
-# 4. Start Ollama (keep this running)
 ollama serve
 
-# 5. Backend setup (new terminal)
+# Backend (new terminal)
 cd backend
 pip install -r requirements.txt
 cp ../.env.example .env
 alembic upgrade head
-uvicorn app.main:app --host 0.0.0.0 --port 8000 --reload
+uvicorn app.main:app --port 8000 --reload
 
-# 6. Frontend setup (new terminal)
+# Frontend (new terminal)
 cd frontend
 npm install
 npm run dev
 ```
 
-### Open
+Open http://localhost:3000. Register, login, chat. The security engine runs on every message — try typing "ignore previous instructions" and watch it get blocked.
 
-- **Website:** http://localhost:3000
-- **API Docs:** http://localhost:8000/docs
-- Register an account, login, and start chatting
+## Tech
 
-### Cost
+**Backend:** FastAPI, SQLAlchemy (async), Pydantic, PostgreSQL + pgvector, Redis
 
-| Component | Cost |
-|-----------|------|
-| SentinelAI | Free (MIT) |
-| PostgreSQL + Redis | Free (Docker) |
-| Ollama + Llama 3 | Free (local) |
-| RAG embeddings | Free (nomic-embed-text via Ollama) |
-| GPT-4, Claude (optional) | Paid API keys |
+**Frontend:** Next.js 14, TypeScript, Tailwind, Recharts, Zustand
 
-Everything works without any API keys. Cloud AI models are optional.
+**AI:** Ollama (Llama 3 for chat, nomic-embed-text for RAG). Optionally supports OpenAI/Anthropic/Google if you add API keys.
 
-### Development Setup
+**Infra:** Docker Compose (local), Kubernetes manifests + Terraform modules (prod), GitHub Actions CI/CD
 
-See [Developer Guide](docs/developer-guide.md) for detailed setup instructions.
+## Project structure
 
-## Development Milestones
+```
+backend/
+  app/
+    security/        # Detection engine (injection, jailbreak, PII, heuristics)
+    gateway/         # Multi-model router with circuit breaker
+    rag/             # Document processing + vector search pipeline
+    api/v1/          # REST endpoints + WebSocket streaming
+    middleware/      # Rate limiting, security headers
+frontend/
+  src/app/           # Next.js pages (dashboard, chat, admin, etc.)
+infrastructure/
+  kubernetes/        # K8s manifests with Kustomize overlays
+  terraform/         # AWS modules (VPC, ECS, RDS)
+  monitoring/        # Prometheus + Grafana
+```
 
-### Phase 1: Foundation
-- [x] Project structure and scaffolding
-- [x] Docker Compose setup
-- [x] Database schema design
-- [x] Basic authentication (JWT)
-- [x] CI/CD pipeline
+## Architecture
 
-### Phase 2: Core Security Engine
-- [ ] Prompt injection detection
-- [ ] Jailbreak detection
-- [ ] Sensitive data masking
-- [ ] Security scoring
+See [docs/architecture/DIAGRAM.md](docs/architecture/DIAGRAM.md) for full diagrams (renders on GitHub).
 
-### Phase 3: AI Gateway
-- [ ] Multi-model router (GPT, Claude, Gemini, Llama)
-- [ ] Request/response pipeline
-- [ ] Rate limiting and throttling
-- [ ] NVIDIA NeMo Guardrails
+## Status
 
-### Phase 4: RAG System
-- [ ] Document upload and processing
-- [ ] Embedding generation
-- [ ] pgvector storage and retrieval
-- [ ] Access-controlled document queries
-
-### Phase 5: Frontend & Dashboards
-- [ ] Authentication UI
-- [ ] AI Chat interface
-- [ ] Security analytics dashboard
-- [ ] Admin portal
-- [ ] Monitoring dashboard
-
-### Phase 6: Production Readiness
-- [ ] Kubernetes deployment
-- [ ] Terraform infrastructure
-- [ ] Comprehensive testing
-- [ ] Performance optimization
-- [ ] Security hardening
-
-## Security
-
-This project follows the [OWASP LLM Top 10](https://owasp.org/www-project-top-10-for-large-language-model-applications/) guidelines.
-
-## Contributing
-
-See [CONTRIBUTING.md](CONTRIBUTING.md) for development workflow and guidelines.
+Working locally with Docker + Ollama. Security engine is the most complete part — the detection pipeline, scoring system, and response filter are fully implemented and tested. Dashboard shows mock data for now (wiring up real-time stats from audit logs is next).
 
 ## License
 
-MIT License - see [LICENSE](LICENSE) for details.
+MIT

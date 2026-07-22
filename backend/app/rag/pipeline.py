@@ -1,16 +1,4 @@
-"""
-RAG Pipeline
-
-Orchestrates the complete Retrieval-Augmented Generation flow:
-1. Process query through security check
-2. Generate query embedding
-3. Retrieve relevant chunks from vector store
-4. Assemble context from retrieved chunks
-5. Generate response using LLM with context
-6. Filter response for security
-
-Access control is enforced at every step.
-"""
+"""RAG pipeline — query embeddings, retrieve chunks, generate answer with sources."""
 
 from typing import Dict, List, Optional
 from uuid import UUID

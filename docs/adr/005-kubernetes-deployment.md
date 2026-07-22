@@ -1,91 +1,29 @@
-# ADR-005: Kubernetes Deployment with Kustomize Overlays
+# ADR-005: Kubernetes with Kustomize overlays
 
-## Status: Accepted
+**Status:** Accepted
 
-## Context
+**Context:** Need deployment that works for local dev (Docker Compose), staging, and production. Want to avoid duplicating config across environments.
 
-SentinelAI needs a deployment strategy that supports:
+**Decision:** Kustomize overlays on a base set of K8s manifests.
 
-- Multiple environments (development, staging, production)
-- Horizontal scaling for the API layer under variable load
-- Stateful workloads (PostgreSQL, Redis) with proper lifecycle management
-- Rolling updates with zero-downtime deployments
-- Resource isolation between components
-- Infrastructure as code with environment-specific configuration
+- `base/` has the canonical resource definitions
+- `overlays/dev/` patches replicas=1, lower resource limits
+- `overlays/prod/` patches replicas=3, higher limits, prod env vars
+- HPA on backend (2-10 pods, 70% CPU target)
+- StatefulSet for PostgreSQL (persistent volume)
+- Ingress with TLS for external access
 
-## Decision
+**Why not Helm?**
+- Kustomize is built into kubectl (no extra tooling)
+- Our config isn't complex enough to need templating — patches are sufficient
+- Easier to read (plain YAML vs Go templates)
 
-We deploy SentinelAI on **Kubernetes** using **Kustomize overlays** for environment management, with HPA for autoscaling and StatefulSets for databases.
+**Tradeoffs:**
+- Less flexible than Helm for highly parameterized deployments
+- No release management (solved by CI/CD pipeline tracking image tags)
+- StatefulSet for DB is fine for dev/staging but prod should use managed RDS
 
-### Architecture
-
-```
-├── infrastructure/k8s/
-│   ├── base/                    # Shared manifests
-│   │   ├── backend-deployment.yaml
-│   │   ├── frontend-deployment.yaml
-│   │   ├── postgres-statefulset.yaml
-│   │   ├── redis-statefulset.yaml
-│   │   └── kustomization.yaml
-│   ├── overlays/
-│   │   ├── development/         # Local/dev settings
-│   │   ├── staging/             # Pre-production
-│   │   └── production/          # Production overrides
-│   └── components/
-│       ├── monitoring/          # Prometheus + Grafana
-│       └── ingress/             # NGINX Ingress
-```
-
-### Key design choices:
-
-1. **Kustomize over Helm** — Simpler mental model, no template language, native kubectl support. Environment differences are expressed as patches, not conditionals.
-
-2. **HPA (Horizontal Pod Autoscaler)** for stateless services:
-   - Backend API: Scale 2–10 pods based on CPU (70%) and custom metrics (request latency)
-   - Frontend: Scale 2–5 pods based on CPU
-
-3. **StatefulSet for databases:**
-   - PostgreSQL: StatefulSet with persistent volume claims, scheduled backups to S3
-   - Redis: StatefulSet with AOF persistence, Sentinel for failover in production
-
-4. **Resource limits on all pods:**
-   - Backend: 256Mi–1Gi memory, 250m–1000m CPU
-   - Frontend: 128Mi–512Mi memory, 100m–500m CPU
-   - PostgreSQL: 512Mi–2Gi memory, 500m–2000m CPU
-
-5. **Rolling update strategy:**
-   - maxSurge: 1, maxUnavailable: 0 (zero-downtime)
-   - Readiness probes gate traffic routing
-   - PodDisruptionBudgets ensure minimum availability
-
-6. **Network policies:**
-   - Backend can reach PostgreSQL and Redis
-   - Frontend can only reach Backend
-   - No direct external access to databases
-
-## Consequences
-
-**Positive:**
-- Consistent deployment across all environments
-- Auto-scaling handles traffic spikes without manual intervention
-- StatefulSets provide proper data persistence guarantees
-- Kustomize patches keep environment differences minimal and auditable
-- Network policies enforce least-privilege communication
-- Infrastructure as code enables GitOps workflows
-
-**Negative:**
-- Kubernetes adds operational complexity (requires team expertise)
-- StatefulSets are more complex to manage than managed database services
-- Local development requires minikube/kind setup or Docker Compose fallback
-- Resource limits require careful tuning to avoid OOM kills
-- Monitoring and alerting infrastructure must be maintained
-
-## Alternatives Considered
-
-| Alternative | Reason Rejected |
-|-------------|----------------|
-| **AWS ECS/Fargate** | Vendor lock-in to AWS; less portable; weaker ecosystem for stateful workloads |
-| **Docker Compose in production** | No auto-scaling, no self-healing, no rolling updates, single-host limitation |
-| **Helm charts** | Template complexity; harder to diff between environments; Kustomize is simpler for our needs |
-| **Serverless (Lambda/Cloud Run)** | Cold starts unacceptable for real-time chat; connection pooling issues with PostgreSQL; not suitable for WebSocket streaming |
-| **Managed Kubernetes (EKS/GKE)** | Actually compatible — we use Kustomize overlays that work on any K8s. Cloud-managed control plane is recommended for production |
+**Rejected:**
+- Helm — overkill for this project, harder to debug templates
+- Docker Compose in prod — no auto-scaling, no self-healing, no rolling updates
+- AWS-only (ECS) — locks us into one cloud

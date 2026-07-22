@@ -1,8 +1,5 @@
 """
-Security Engine - Core orchestrator for all security analysis.
-
-Coordinates multiple detectors, aggregates scores, and determines
-the final security verdict for each prompt.
+SentinelAI Security Engine - orchestrates all detectors and produces a verdict.
 """
 
 import re
